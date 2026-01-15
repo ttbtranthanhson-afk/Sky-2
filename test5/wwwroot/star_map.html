@@ -1,0 +1,1479 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BẢN ĐỒ SAO</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+            font-family: Arial, sans-serif;
+        }
+
+            body::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-image: radial-gradient(1px 1px at 25% 30%, rgba(255, 255, 255, 0.7), transparent), radial-gradient(1px 1px at 50% 12%, rgba(255, 255, 255, 0.6), transparent), radial-gradient(1px 1px at 80% 50%, rgba(255, 255, 255, 0.7), transparent);
+                z-index: -1;
+            }
+
+        h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: #4a90e2;
+        }
+
+        #canvas3d {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #controlPanel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90vw;
+            max-width: 1200px;
+            height: 85vh;
+            background: rgb(6, 44, 114, 0.5);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2.5rem;
+            z-index: 1000;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+
+            #controlPanel.minimized {
+                width: 60px;
+                height: 60px;
+                top: 20px;
+                right: 20px;
+                left: auto;
+                transform: none;
+                padding: 0;
+                background: #4a90e2;
+                cursor: pointer;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            }
+
+                #controlPanel.minimized .panel-content {
+                    display: none;
+                }
+
+                #controlPanel.minimized::after {
+                    content: '⚙️';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 28px;
+                }
+
+        .panel-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+            .panel-header h1 {
+                font-size: 2.5rem;
+                background: linear-gradient(120deg, #e8eaf0, #a78bff);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                margin-bottom: 0.5rem;
+            }
+
+            .panel-header p {
+                color: white;
+                font-size: 1.1rem;
+            }
+
+        #locationPicker {
+            width: 100%;
+            height: 350px;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .control-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+            .form-group label {
+                font-weight: 600;
+                margin-bottom: 0.5rem;
+                color: #e8eaf0;
+                font-size: 0.95rem;
+            }
+
+            .form-group input {
+                padding: 0.8rem;
+                background: rgba(25, 30, 45, 0.8);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                color: var(--text);
+                font-size: 1rem;
+            }
+
+                .form-group input:focus {
+                    outline: none;
+                    border-color: #4a90e2;
+                    box-shadow: 0 0 0 2px rgba(131, 103, 223, 0.2);
+                }
+
+        .create-btn {
+            background: linear-gradient(135deg, #4a90e2, #6b52c7);
+            color: white;
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(131, 103, 223, 0.3);
+            height: fit-content;
+        }
+
+            .create-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(131, 103, 223, 0.4);
+            }
+
+        .coordinates-display {
+            text-align: center;
+            padding: 0.8rem;
+            background: rgba(25, 30, 45, 0.8);
+            border-radius: 8px;
+            color: #a0a8c0;
+            margin-bottom: 1rem;
+        }
+
+        .leaflet-container {
+            background: rgba(25, 30, 45, 0.8);
+        }
+
+        #timeControls {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.85);
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 320px;
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+            #timeControls.active {
+                display: block;
+            }
+
+            #timeControls h3 {
+                margin: 0 0 10px 0;
+                font-size: 16px;
+                color: #4a90e2;
+            }
+
+            #timeControls .control-group {
+                margin-bottom: 12px;
+                display: block;
+            }
+
+            #timeControls label {
+                display: block;
+                margin-bottom: 5px;
+                font-size: 12px;
+                color: #aaa;
+            }
+
+            #timeControls input[type="range"] {
+                width: 100%;
+                margin: 5px 0;
+            }
+
+            #timeControls input[type="date"],
+            #timeControls input[type="time"] {
+                width: 100%;
+                padding: 6px;
+                background: rgba(255,255,255,0.1);
+                border: 1px solid rgba(255,255,255,0.2);
+                border-radius: 4px;
+                color: white;
+                font-size: 13px;
+            }
+
+        .value-display {
+            font-size: 12px;
+            color: #4a90e2;
+            margin-top: 3px;
+            font-weight: bold;
+        }
+
+        .time-display {
+            background: rgba(74, 144, 226, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 13px;
+            border: 1px solid rgba(74, 144, 226, 0.3);
+        }
+
+        button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 5px;
+            margin-top: 8px;
+        }
+
+            button:hover {
+                background: #357abd;
+            }
+
+        #infoBadge {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 320px;
+            backdrop-filter: blur(10px);
+            z-index: 999;
+            display: none;
+        }
+
+            #infoBadge.active {
+                display: block;
+            }
+
+            #infoBadge h3 {
+                margin: 0 0 10px 0;
+                font-size: 16px;
+                color: #4a90e2;
+            }
+
+            #infoBadge p {
+                margin: 5px 0;
+                font-size: 12px;
+                color: white;
+            }
+
+            #infoBadge strong {
+                color: #4a90e2;
+            }
+
+        #infoToggleButton {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: #4a90e2;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            font-size: 24px;
+            transition: all 0.3s;
+        }
+
+            #infoToggleButton.active {
+                background: #ff4444;
+            }
+
+        #constellationLabel {
+            position: fixed;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00d2ff;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #00d2ff;
+            display: none;
+            z-index: 2000;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        #timeControls {
+            display: none;
+        }
+
+        #infoToggleButton {
+            display: none;
+        }
+
+        #menuBtn {
+            position: fixed;
+            top: 20px;
+            right: 100px;
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.3), rgba(74, 144, 226, 0.5));
+            border: 2px solid rgba(74, 144, 226, 0.6);
+            color: white;
+            border-radius: 50%;
+            z-index: 100;
+            padding: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+            #menuBtn:hover {
+                transform: scale(1.1);
+            }
+
+        .bar {
+            width: 100%;
+            height: 3px;
+            background: white;
+            margin: 5px 0;
+        }
+
+        #navMenu {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 10px;
+            z-index: 100;
+            display: none;
+        }
+
+            #navMenu button {
+                margin: 5px 0;
+            }
+
+        
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 30px rgba(74, 144, 226, 0.3);
+        }
+
+        .modal-content {
+            background: rgba(20, 20, 30, 0.95);
+            border: 1px solid #4a90e2;
+            padding: 20px;
+            padding-bottom: 70px;
+            border-radius: 15px;
+            width: 500px;
+            height: 380px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            color: white;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(74, 144, 226, 0.3);
+            overflow: hidden; 
+        }
+
+        .edu-theme {
+            border-color: #4a90e2;
+            box-shadow: 0 0 30px rgba(74, 144, 226, 0.3);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #aaa;
+            z-index: 10;
+            line-height: 1;
+            padding: 5px;
+        }
+
+            .close-btn:hover {
+                color: white;
+            }
+
+        .modal-page {
+            display: none;
+            height: 100%;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+            .modal-page.active {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                animation: fadeIn 0.3s;
+            }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: rgba(20, 20, 30, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 0;
+        }
+
+        .modal-content .modal-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .nav-arrow {
+            background: #333;
+            border: none;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+            .nav-arrow:hover {
+                background: #4a90e2;
+                transform: scale(1.05);
+            }
+
+        .page-indicator {
+            font-size: 14px;
+            color: #888;
+            font-weight: 500;
+        }
+
+        .large-modal {
+            width: 500px;
+            height: 380px;
+        }
+
+        .modal-page > p {
+            text-align: center;
+            line-height: 1.6;
+            margin: 0;
+            max-width: 95%;
+        }
+
+        .modal-page > h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #4a90e2;
+        }
+
+        .img-col {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .img-col img {
+            max-width: 100%;
+            height: auto;
+            max-height: 180px;
+            border-radius: 8px;
+            border: 1px solid rgba(241, 196, 15, 0.3);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+
+        #eduBtn, #quizBtn {
+            position: fixed;
+            top: 20px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.3), rgba(74, 144, 226, 0.5));
+            border: 2px solid rgba(74, 144, 226, 0.6);
+            color: white;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #eduBtn {
+            right: 170px;
+        }
+
+        #quizBtn {
+            right: 240px;
+            background: linear-gradient(135deg, rgba(39, 174, 96, 0.3), rgba(39, 174, 96, 0.5));
+            border-color: rgba(39, 174, 96, 0.6);
+        }
+
+            #eduBtn:hover, #quizBtn:hover {
+                transform: scale(1.1);
+            }
+
+        .quiz-theme {
+            border-color: #27ae60;
+            box-shadow: 0 0 30px rgba(39, 174, 96, 0.3);
+        }
+
+        .quiz-question {
+            font-size: 18px;
+            font-weight: bold;
+            color: #27ae60;
+            margin-bottom: 20px;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .quiz-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            color: white;
+            font-size: 15px;
+        }
+
+            .quiz-option:hover {
+                background: rgba(39, 174, 96, 0.2);
+                border-color: #27ae60;
+            }
+
+            .quiz-option.selected {
+                background: rgba(39, 174, 96, 0.3);
+                border-color: #27ae60;
+            }
+
+            .quiz-option.correct {
+                background: rgba(39, 174, 96, 0.5);
+                border-color: #27ae60;
+            }
+
+            .quiz-option.wrong {
+                background: rgba(231, 76, 60, 0.5);
+                border-color: #e74c3c;
+            }
+
+        .quiz-result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: none;
+        }
+
+            .quiz-result.show {
+                display: block;
+            }
+
+            .quiz-result.correct {
+                background: rgba(39, 174, 96, 0.3);
+                color: #27ae60;
+            }
+
+            .quiz-result.wrong {
+                background: rgba(231, 76, 60, 0.3);
+                color: #e74c3c;
+            }
+
+        .quiz-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 20px;
+            margin-top: 15px;
+            transition: all 0.2s;
+        }
+
+            .quiz-btn:hover {
+                background: #229954;
+            }
+
+            .quiz-btn:disabled {
+                background: #7f8c8d;
+                cursor: not-allowed;
+            }
+
+
+    </style>
+</head>
+<body>
+    <div id="canvas3d"></div>
+
+    <div id="controlPanel" onclick="togglePanel(event)">
+        <div class="panel-content">
+            <div class="panel-header">
+                <div onclick="closePanel(); event.stopPropagation();" style="position: absolute; right: 25px; top: 25px; cursor: pointer; font-size: 20px; color: var(--text-secondary);">✖</div>
+                <h1>🌌 Quan sát bầu trời sao 3D</h1>
+                <p>Chọn vị trí và thời gian để khám phá bầu trời</p>
+            </div>
+
+            <div id="locationPicker"></div>
+
+            <div class="coordinates-display" id="selectedLocation">
+                Nhấp vào bản đồ để chọn vị trí
+            </div>
+
+            <div class="control-group">
+                <div class="form-group">
+                    <label for="dateInput">Ngày quan sát</label>
+                    <input type="date" id="dateInput">
+                </div>
+                <div class="form-group">
+                    <label for="timeInput">Giờ quan sát</label>
+                    <input type="time" id="timeInput">
+                </div>
+                <button class="create-btn" onclick="createStarMap()">Tạo bản đồ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="timeControls">
+        <h3>Điều Khiển</h3>
+
+        <div class="control-group">
+            <label>Chọn Ngày:</label>
+            <input type="date" id="dateInput2">
+        </div>
+
+        <div class="control-group">
+            <label>Chọn Giờ:</label>
+            <input type="time" id="timeInput2">
+        </div>
+
+        <div class="control-group">
+            <label>Tốc Độ Mô Phỏng:</label>
+            <input type="range" id="speedSlider" min="0" max="200" value="0" step="20">
+            <div class="value-display" id="speedValue">1 giây = 0 phút</div>
+        </div>
+
+        <div class="time-display">
+            <strong>Thời Gian Mô Phỏng:</strong><br>
+            <span id="simTime">--/--/---- --:--:--</span>
+        </div>
+
+        <button onclick="pauseSimulation()">Tạm Dừng/Chạy</button>
+        <button onclick="returnToPresent()">Về Hiện Tại</button>
+    </div>
+
+    <div id="infoToggleButton" onclick="toggleInfoMode()" title="Bật/Tắt thông tin chòm sao">!</div>
+
+    <div id="constellationLabel"></div>
+
+    <div id="infoBadge">
+        <h3>Thông tin quan sát</h3>
+        <p><strong>Vĩ độ:</strong> <span id="infoLat">--</span></p>
+        <p><strong>Kinh độ:</strong> <span id="infoLon">--</span></p>
+        <p><strong>Múi giờ:</strong> UTC <span id="infoTimezone">+0</span></p>
+    </div>
+
+    <button id="menuBtn" onclick="toggleNavMenu()">
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+    </button>
+
+    <div id="navMenu">
+        <button onclick="navigateTo('solar_system.html')">Hệ mặt trời</button>
+        <button onclick="navigateTo('sun_moon.html')">Mặt Trời & Mặt Trăng</button>
+    </div>
+
+    <button id="eduBtn" onclick="openModal('eduModal')">?</button>
+
+    <div id="guideModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('guideModal')">&times;</span>
+            <div id="guidePage1" class="modal-page active">
+                <h3>Hướng Dẫn Điều Khiển</h3>
+                <p><b>Xoay:</b> Nhấn giữ chuột trái và kéo.</p>
+                <p><b>Phóng to/nhỏ:</b> Sử dụng con lăn chuột.</p>
+                <p><b>Xem thông tin:</b> Click trực tiếp vào một hành tinh.</p>
+            </div>
+            <div id="guidePage2" class="modal-page">
+                <h3>Chức Năng Hệ Thống</h3>
+                <p><b>Vị trí:</b> Bạn có thể chọn vị trí bất kì trên bản đồ để xem bầu trời sao.</p>
+                <p><b>Thời gian:</b> Bạn có thể chọn ngày/giờ bất kỳ để xem vị trí bầu trời sao trong quá khứ hoặc tương lai.</p>
+            </div>
+            <div id="guidePage3" class="modal-page">
+                <h3>Chức Năng Hệ Thống</h3>
+                <p><b>Tốc độ:</b> Điều chỉnh thanh trượt để tăng tốc mô phỏng.</p>
+                <p><b>Tạm dừng/Tiếp tục:</b> Ấn nút tạm dừng/tiếp tục để cho bầu trời dừng hoặc chạy tiếp.</p>
+                <p><b>Trở về:</b> Ấn nút về hiện tại để trở về thời của hiện tại</p>
+            </div>
+            <div class="modal-footer">
+                <button class="nav-arrow" onclick="changePage('guidePage', -1)">❮</button>
+                <span class="page-indicator">Phần <span id="guideNum">1</span>/3</span>
+                <button class="nav-arrow" onclick="changePage('guidePage', 1)">❯</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="eduModal" class="modal-overlay">
+        <div class="modal-content edu-theme large-modal">
+            <span class="close-btn" onclick="closeModal('eduModal')">&times;</span>
+
+            <div id="eduPage1" class="modal-page active">
+                <h3>Bản đồ sao là gì?</h3>
+                <p>Bản đồ sao là bản vẽ biểu diễn vị trí của các ngôi sao, chòm sao và các thiên thể trên bầu trời đêm. Nó giúp người quan sát nhận diện các vật thể thiên văn tại một thời điểm và vị trí cụ thể trên Trái Đất.</p>
+            </div>
+
+            <div id="eduPage2" class="modal-page">
+                <h3>Sao Bắc Cực (Polaris)</h3>
+                <p>Sao Bắc Cực là ngôi sao nằm rất gần <b>Cực Bắc Thiên cầu</b>. Do trục Trái Đất hướng thẳng về phía nó, Polaris dường như đứng yên trong khi toàn bộ bầu trời quay quanh nó, trở thành kim chỉ nam hoàn hảo để xác định hướng Bắc.</p>
+                <div class="img-col">
+                    <img src="images/polaris_star.png" alt="Sao Bắc Cực">
+                </div>
+            </div>
+
+            <div id="eduPage3" class="modal-page">
+                <h3>Chòm sao Gấu Lớn (Ursa Major)</h3>
+                <p>Là một trong những chòm sao nổi tiếng nhất. Nhóm 7 ngôi sao sáng nhất của nó tạo thành hình chiếc <b>Gàu Sòng (Big Dipper)</b>. Chòm sao này rất quan trọng trong việc định vị các ngôi sao khác trên bầu trời phương Bắc.</p>
+                <div class="img-col">
+                    <img src="images/Ursa_Major.png" alt="Chòm sao Gấu Lớn">
+                </div>
+            </div>
+
+            <div id="eduPage4" class="modal-page">
+                <h3>Chòm sao Thiên Hậu (Cassiopeia)</h3>
+                <p>Cassiopeia rất dễ nhận diện với hình dạng giống chữ <b>"W"</b> hoặc <b>"M"</b> tạo bởi 5 ngôi sao sáng. Chòm sao này nằm đối diện với Gấu Lớn qua sao Bắc Cực, luôn luân phiên xuất hiện trên bầu trời.</p>
+                <div class="img-col">
+                    <img src="images/Cassiopeia.png" alt="Chòm sao Thiên Hậu">
+                </div>
+            </div>
+
+            <div id="eduPage5" class="modal-page">
+                <h3>Tìm hướng Bắc (Gấu Lớn)</h3>
+                <p>Kéo dài đường thẳng nối hai ngôi sao ở thành gàu (Merak và Dubhe) của chòm Gấu Lớn khoảng <b>5 lần</b> khoảng cách giữa chúng. Điểm kết thúc sẽ dẫn bạn đến ngay Sao Bắc Cực.</p>
+                <div class="img-col">
+                    <img src="images/Ursa.png" alt="Chòm sao Gấu Lớn">
+                </div>
+            </div>
+            <div id="eduPage6" class="modal-page">
+                <h3>Tìm hướng Bắc (Thiên Hậu)</h3>
+                <p>Kẻ đường phân giác của góc nhọn lớn hơn trong hình chữ "W". Kéo dài đường này khoảng 7 lần sẽ tìm thấy Sao Bắc Cực. Cách này cực kỳ hữu ích khi chòm Gấu Lớn nằm ở phía dưới chân trời.</p>
+                <div class="img-col">
+                    <img src="images/Cas.png" alt="Chòm sao Thiên Hậu">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="nav-arrow" onclick="changePage('eduPage', -1)">❮</button>
+                <span class="page-indicator">Kiến thức <span id="eduNum">1</span>/6</span>
+                <button class="nav-arrow" onclick="changePage('eduPage', 1)">❯</button>
+            </div>
+        </div>
+    </div>
+
+    <button id="quizBtn" onclick="openModal('quizModal')">+</button>
+    <div id="quizModal" class="modal-overlay">
+        <div class="modal-content quiz-theme">
+            <span class="close-btn" onclick="closeModal('quizModal')">&times;</span>
+            <div id="quizPage1" class="modal-page active">
+                <p class="quiz-question">
+                    Bản đồ sao dùng để biểu diễn điều gì?
+                </p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="selectAnswer(1, 'A')">A. Cấu tạo của ngôi sao</div>
+                    <div class="quiz-option" onclick="selectAnswer(1, 'B')">B. Quỹ đạo vệ tinh nhân tạo</div>
+                    <div class="quiz-option" onclick="selectAnswer(1, 'C')">C. Vị trí các ngôi sao trên bầu trời</div>
+                    <div class="quiz-option" onclick="selectAnswer(1, 'D')">D. Chuyển động của các hành tinh</div>
+                </div>
+                <div class="quiz-result" id="result1"></div>
+                <button class="quiz-btn" onclick="checkAnswer(1, 'C')" id="submitBtn1">Kiểm tra</button>
+            </div>
+            <div id="quizPage2" class="modal-page">
+                <p class="quiz-question">
+                    Yếu tố nào KHÔNG cần thiết khi tạo bản đồ sao?
+                </p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="selectAnswer(2, 'A')">A. Thời gian quan sát</div>
+                    <div class="quiz-option" onclick="selectAnswer(2, 'B')">B. Nhiệt độ bề mặt Mặt Trời</div>
+                    <div class="quiz-option" onclick="selectAnswer(2, 'C')">C. Vị trí địa lý</div>
+                    <div class="quiz-option" onclick="selectAnswer(2, 'D')">D. Hướng quan sát</div>
+                </div>
+                <div class="quiz-result" id="result2"></div>
+                <button class="quiz-btn" onclick="checkAnswer(2, 'B')" id="submitBtn2">Kiểm tra</button>
+            </div>
+            <div id="quizPage3" class="modal-page">
+                <p class="quiz-question">
+                    Kéo dài đường thẳng nối hai ngôi sao Merak và Dubhe khoảng 5 lần thì xác định được sao bắc cực.
+                </p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="selectAnswer(3, 'false')">✗ Sai</div>
+                    <div class="quiz-option" onclick="selectAnswer(3, 'true')">✓ Đúng</div>
+                </div>
+                <div class="quiz-result" id="result3"></div>
+                <button class="quiz-btn" onclick="checkAnswer(3, 'true')" id="submitBtn3">Kiểm tra</button>
+            </div>
+            <div id="quizPage4" class="modal-page">
+                <p class="quiz-question">
+                    Chòm sao gấu lớn chứa sao bắc cực.
+                </p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="selectAnswer(4, 'true')">✓ Đúng</div>
+                    <div class="quiz-option" onclick="selectAnswer(4, 'false')">✗ Sai</div>
+                </div>
+                <div class="quiz-result" id="result4"></div>
+                <button class="quiz-btn" onclick="checkAnswer(4, 'false')" id="submitBtn4">Kiểm tra</button>
+            </div>
+            <div class="modal-footer">
+                <button class="nav-arrow" onclick="changePage('eduPage', -1)">❮</button>
+                <span class="page-indicator">Kiến thức <span id="eduNum">1</span>/3</span>
+                <button class="nav-arrow" onclick="changePage('eduPage', 1)">❯</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <script>
+        let scene, camera, renderer;
+        let starSphere, skyGroup;
+        let locationMarker, locationMap;
+        let selectedCoords = null;
+        let simDate = new Date();
+        let isRunning = false;
+        let speedMultiplier = 0;
+        let lastTime = Date.now();
+        let cameraRotation = { x: 0, y: 0 };
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let starLabelsGroup = new THREE.Group();
+        let namedStars = [];
+        const CONSTELLATIONS_VN = {
+            "And": "Tiên Nữ", "Ant": "Máy Bơm", "Aps": "Thiên Cực", "Aqr": "Bảo Bình", "Aql": "Thiên Ưng", "Ara": "Đàn Tế", "Ari": "Bạch Dương", "Aur": "Ngự Phu", "Boo": "Mục Phu", "Cae": "Hội Họa", "Cam": "Lộc Báo", "Cnc": "Cự Giải", "CVn": "Chó Săn", "CMa": "Đại Khuyển", "CMi": "Tiểu Khuyển", "Cap": "Ma Kết", "Car": "Thuyền Biểu", "Cas": "Thiên Hậu", "Cen": "Nhân Mã", "Cep": "Tiên Vương", "Cet": "Kình Ngư", "Cha": "Tắc Kè", "Cir": "Com-pa", "Col": "Thiên Bồ Câu", "Com": "Hậu Phát", "CrA": "Nam Miện", "CrB": "Bắc Miện", "Crv": "Ô Nha", "Crt": "Cự Tước", "Cru": "Nam Thập Tự", "Cyg": "Thiên Nga", "Del": "Hải Heo", "Dor": "Kiếm Ngư", "Dra": "Thiên Long", "Equ": "Tiểu Mã", "Eri": "Ba Giang", "For": "Thiên Lô", "Gem": "Song Tử", "Gru": "Thiên Hạc", "Her": "Vũ Tiên", "Hor": "Thời Chung", "Hya": "Trường Xà", "Hyi": "Thủy Xà", "Ind": "Ấn Đệ An", "Lac": "Thằn Lằn", "Leo": "Sư Tử", "LMi": "Tiểu Sư", "Lep": "Thiên Thỏ", "Lib": "Thiên Bình", "Lup": "Thiên Lang", "Lyn": "Thiên Miêu", "Lyr": "Thiên Cầm", "Men": "Án Sơn", "Mic": "Hiển Vi", "Mon": "Kỳ Lân", "Mus": "Thiên Ruồi", "Nor": "Củ Xích", "Oct": "Nam Cực", "Oph": "Xà Phu", "Ori": "Thợ Săn", "Pav": "Khổng Tước", "Peg": "Phi Mã", "Per": "Anh Tiên", "Phe": "Phượng Hoàng", "Pic": "Hội Họa", "Psc": "Song Ngư", "PsA": "Nam Ngư", "Pup": "Thuyền Vĩ", "Pyx": "La Bàn", "Ret": "Võng Cổ", "Sge": "Thiên Tiễn", "Sgr": "Cung Thủ", "Sco": "Thiên Yết", "Scl": "Ngọc Phu", "Sct": "Thuẫn Bài", "Ser": "Cự Xà", "Sex": "Lục Phân", "Tau": "Kim Ngưu", "Tel": "Viễn Vọng", "Tri": "Tam Giác", "TrA": "Nam Tam Giác", "Tuc": "Đỗ Quyên", "UMa": "Đại Hùng", "UMi": "Tiểu Hùng", "Vel": "Thuyền Phàm", "Vir": "Xử Nữ", "Vol": "Phi Ngư", "Vul": "Cáo Nhỏ"
+        };
+        const PLANETS_VN = [
+            { name: "SAO THỦY", color: "#FFFACD", period: 88 },
+            { name: "SAO KIM", color: "#FFFACD", period: 224 },
+            { name: "SAO HỎA", color: "#FFFACD", period: 687 },
+            { name: "SAO MỘC", color: "#FFFACD", period: 4333 },
+            { name: "SAO THỔ", color: "#FFFACD", period: 10759 }
+        ];
+
+        function init() {
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            document.getElementById('dateInput').value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+            document.getElementById('timeInput').value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+            initLocationPicker();
+            initThreeJS();
+        }
+
+        function togglePanel(event) {
+            const panel = document.getElementById('controlPanel');
+            if (panel.classList.contains('minimized')) {
+                panel.classList.remove('minimized');
+            }
+        }
+
+        function closePanel() {
+            const panel = document.getElementById('controlPanel');
+            panel.classList.add('minimized');
+        }
+
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x88ccff, 50, 1000);
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+            camera.position.set(0, 2, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('canvas3d').appendChild(renderer.domElement);
+
+            const canvas = renderer.domElement;
+            canvas.addEventListener('mousedown', e => { isDragging = true; previousMousePosition = { x: e.clientX, y: e.clientY }; });
+            canvas.addEventListener('mousemove', e => {
+                if (!isDragging) return;
+                const deltaX = e.clientX - previousMousePosition.x;
+                const deltaY = e.clientY - previousMousePosition.y;
+                cameraRotation.y += deltaX * 0.003;
+                cameraRotation.x += deltaY * 0.003;
+                cameraRotation.x = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, cameraRotation.x));
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+                updateCameraLook();
+            });
+            window.addEventListener('mouseup', () => isDragging = false);
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            skyGroup = new THREE.Group();
+            scene.add(skyGroup);
+            skyGroup.add(starLabelsGroup);
+
+            addGroundAndCompass();
+            animate();
+        }
+
+        function updateCameraLook() {
+            const phi = Math.PI / 2 - cameraRotation.x;
+            const theta = cameraRotation.y;
+
+            const x = Math.sin(phi) * Math.sin(theta);
+            const y = Math.cos(phi);
+            const z = Math.sin(phi) * Math.cos(theta);
+
+            const lookTarget = new THREE.Vector3(
+                camera.position.x - x,
+                camera.position.y + y,
+                camera.position.z - z
+            );
+
+            camera.lookAt(lookTarget);
+        }
+
+        function createPureText(text, position, color, fontSize = 80) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            ctx.font = `bold ${fontSize}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            ctx.shadowColor = 'black';
+            ctx.shadowBlur = 10;
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 8;
+            ctx.strokeText(text, 512, 128);
+
+            ctx.fillStyle = color;
+            ctx.fillText(text, 512, 128);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMaterial = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthTest: true
+            });
+
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.position.copy(position);
+
+            sprite.scale.set(250, 60, 1);
+            return sprite;
+        }
+
+        async function createStarfield() {
+            try {
+                const [starsData, linesData, starNamesData] = await Promise.all([
+                    d3.json("https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/stars.6.json"),
+                    d3.json("https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/constellations.lines.json"),
+                    fetch("https://raw.githubusercontent.com/mirandadam/iau-starnames/master/catalog_data/IAU-CSN.json").then(res => res.json())
+                ]);
+
+                skyGroup.clear();
+                starLabelsGroup = new THREE.Group();
+                skyGroup.add(starLabelsGroup);
+
+                starNamesData.forEach(entry => {
+                    const raDeg = parseFloat(entry["RA(J2000)"]), decDeg = parseFloat(entry["Dec(J2000)"]);
+                    const pos = new THREE.Vector3().setFromSphericalCoords(1005, (90 - decDeg) * Math.PI / 180, raDeg * Math.PI / 180);
+
+                    // Chữ tên sao (Light Blue)
+                    const starText = createPureText(entry["Name/ASCII"], pos, "#ADD8E6", 70);
+                    starText.scale.set(150, 35, 1); // Cỡ vừa cho sao
+                    starLabelsGroup.add(starText);
+                });
+
+                // --- 2. VẼ CHÒM SAO (Xanh dương đậm - Cỡ ĐẠI) ---
+                linesData.features.forEach(feature => {
+                    let sumPos = new THREE.Vector3(), count = 0;
+                    const lineVertices = [];
+
+                    feature.geometry.coordinates.forEach(contour => {
+                        for (let i = 0; i < contour.length - 1; i++) {
+                            [contour[i], contour[i + 1]].forEach(p => {
+                                const ra = p[0] * Math.PI / 180, dec = p[1] * Math.PI / 180;
+                                const v = new THREE.Vector3().setFromSphericalCoords(995, (Math.PI / 2 - dec), ra);
+                                lineVertices.push(v.x, v.y, v.z);
+                                sumPos.add(v); count++;
+                            });
+                        }
+                    });
+
+                    // Vẽ đường nối xanh dương
+                    const lineGeo = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(lineVertices, 3));
+                    skyGroup.add(new THREE.LineSegments(lineGeo, new THREE.LineBasicMaterial({ color: 0x0000FF, transparent: true, opacity: 0.4 })));
+
+                    // Tên chòm sao Tiếng Việt (Dark Blue - TO NHẤT)
+                    if (count > 0) {
+                        const vnName = CONSTELLATIONS_VN[feature.id] || feature.id;
+                        const pos = sumPos.divideScalar(count).normalize().multiplyScalar(1025);
+                        const conText = createPureText(vnName.toUpperCase(), pos, "#4D4DFF", 90);
+                        conText.scale.set(350, 85, 1); // Scale cực đại cho chòm sao
+                        skyGroup.add(conText);
+                    }
+                });
+
+                // 3. ĐƯỜNG NỐI & TÊN CHÒM SAO (Xanh dương đậm)
+                linesData.features.forEach(feature => {
+                    const lineVertices = [];
+                    let avgPos = new THREE.Vector3(), count = 0;
+
+                    feature.geometry.coordinates.forEach(contour => {
+                        for (let i = 0; i < contour.length - 1; i++) {
+                            [contour[i], contour[i + 1]].forEach(p => {
+                                const ra = p[0] * Math.PI / 180, dec = p[1] * Math.PI / 180;
+                                const v = new THREE.Vector3().setFromSphericalCoords(995, (Math.PI / 2 - dec), ra);
+                                lineVertices.push(v.x, v.y, v.z);
+                                avgPos.add(v); count++;
+                            });
+                        }
+                    });
+
+                    const lineGeo = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(lineVertices, 3));
+                    skyGroup.add(new THREE.LineSegments(lineGeo, new THREE.LineBasicMaterial({ color: 0x0000FF, transparent: true, opacity: 0.3 })));
+
+                    // Tên chòm sao Tiếng Việt
+                    if (count > 0) {
+                        const vnName = CONSTELLATIONS_VN[feature.id] || feature.id;
+                        const pos = avgPos.divideScalar(count).normalize().multiplyScalar(1015);
+                        const conText = createPureText(vnName, pos, "#00008B", 50); // Dark Blue
+                        conText.scale.set(150, 40, 1);
+                        skyGroup.add(conText);
+                    }
+                });
+
+                // 4. HÀNH TINH (Vàng nhạt)
+                updatePlanets();
+
+                updateSkyPhysics();
+            } catch (e) { console.error(e); }
+        }
+
+        function updatePlanets() {
+            const jd = dateToJD(simDate);
+            const planetGroup = new THREE.Group();
+            skyGroup.add(planetGroup);
+
+            PLANETS_VN.forEach((p, i) => {
+                // Tính vị trí giả lập đơn giản dựa trên chu kỳ
+                const angle = (jd / p.period) * Math.PI * 2;
+                const ra = angle % (Math.PI * 2);
+                const dec = Math.sin(angle * 0.5) * 0.1; // Độ nghiêng quỹ đạo giả lập
+
+                const pos = new THREE.Vector3().setFromSphericalCoords(990, (Math.PI / 2 - dec), ra);
+
+                // Chấm tròn hành tinh
+                const mesh = new THREE.Mesh(new THREE.SphereGeometry(6, 16, 16), new THREE.MeshBasicMaterial({ color: p.color }));
+                mesh.position.copy(pos);
+                planetGroup.add(mesh);
+
+                // Tên hành tinh Tiếng Việt (Vàng nhạt)
+                const pText = createPureText(p.name, pos.clone().multiplyScalar(1.05), "#FFFACD", 45);
+                pText.scale.set(140, 35, 1);
+                planetGroup.add(pText);
+            });
+        }
+
+        function updateSkyPhysics() {
+            if (!skyGroup || !selectedCoords) return;
+
+            const jd = dateToJD(simDate);
+            const gstDeg = jdToGST(jd);
+
+            const lstDeg = (gstDeg + selectedCoords.lon);
+            const lstRad = lstDeg * (Math.PI / 180);
+
+            skyGroup.rotation.y = -lstRad;
+
+            const latRad = selectedCoords.lat * (Math.PI / 180);
+            skyGroup.rotation.x = (Math.PI / 2) - latRad;
+        }
+
+        function addGroundAndCompass() {
+            const groundGeo = new THREE.CircleGeometry(200, 32);
+            const groundMat = new THREE.MeshBasicMaterial({ color: 0x051005, side: THREE.DoubleSide });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -2;
+            scene.add(ground);
+
+            const directions = [
+                { text: 'B', x: 0, z: 100 },
+                { text: 'N', x: 0, z: -100 },
+                { text: 'Đ', x: 100, z: 0 },
+                { text: 'T', x: -100, z: 0 }
+            ];
+
+            directions.forEach(d => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 64; canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 18px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(d.text, 32, 32);
+
+                const spriteMap = new THREE.CanvasTexture(canvas);
+                const spriteMat = new THREE.SpriteMaterial({ map: spriteMap });
+                const sprite = new THREE.Sprite(spriteMat);
+                sprite.position.set(d.x, 10, d.z);
+                sprite.scale.set(20, 20, 1);
+                scene.add(sprite);
+            });
+        }
+
+        function getStarColor(bv) {
+            if (bv < 0.0) return '#9bb0ff';
+            if (bv < 0.5) return '#cad7ff';
+            if (bv < 1.0) return '#f8f7ff';
+            if (bv < 1.5) return '#fff4ea';
+            return '#ffcc6f';
+        }
+
+        function dateToJD(date) {
+            return (date.getTime() / 86400000) - (date.getTimezoneOffset() / 1440) + 2440587.5;
+        }
+
+        function jdToGST(jd) {
+            const T = (jd - 2451545.0) / 36525.0;
+            let GST = 280.46061837 + 360.98564736629 * (jd - 2451545.0) +
+                0.000387933 * T * T - T * T * T / 38710000.0;
+            return (GST % 360 + 360) % 360;
+        }
+
+        window.createStarMap = async function () {
+            if (!selectedCoords) { alert("Vui lòng chọn vị trí!"); return; }
+
+            const dateVal = document.getElementById('dateInput').value;
+            const timeVal = document.getElementById('timeInput').value;
+            simDate = new Date(`${dateVal}T${timeVal}`);
+
+            document.getElementById('controlPanel').classList.add('minimized');
+            document.getElementById('timeControls').classList.add('active');
+            document.getElementById('infoBadge').classList.add('active');
+            document.getElementById('infoToggleButton').style.display = 'flex';
+
+            document.getElementById('infoLat').innerText = selectedCoords.lat.toFixed(4);
+            document.getElementById('infoLon').innerText = selectedCoords.lon.toFixed(4);
+
+            const pad = (n) => String(n).padStart(2, '0');
+            document.getElementById('dateInput2').value = `${simDate.getFullYear()}-${pad(simDate.getMonth() + 1)}-${pad(simDate.getDate())}`;
+            document.getElementById('timeInput2').value = `${pad(simDate.getHours())}:${pad(simDate.getMinutes())}`;
+
+            updateSimTimeDisplay();
+
+            if (!starSphere) {
+                await createStarfield();
+            }
+
+            updateSkyPhysics();
+            closePanel();
+        };
+
+        function updateSimTimeDisplay() {
+            const pad = (n) => String(n).padStart(2, '0');
+            const str = `${pad(simDate.getDate())}/${pad(simDate.getMonth() + 1)}/${simDate.getFullYear()} ${pad(simDate.getHours())}:${pad(simDate.getMinutes())}:${pad(simDate.getSeconds())}`;
+            document.getElementById('simTime').innerText = str;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const now = Date.now();
+            const dt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            if (isRunning && speedMultiplier !== 0) {
+                const addedTime = dt * speedMultiplier * 60 * 1000;
+                simDate = new Date(simDate.getTime() + addedTime);
+                updateSimTimeDisplay();
+                updateSkyPhysics();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.pauseSimulation = function () {
+            isRunning = !isRunning;
+        };
+
+        window.returnToPresent = function () {
+            simDate = new Date();
+            updateSkyPhysics();
+            updateSimTimeDisplay();
+        };
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            speedMultiplier = parseInt(e.target.value);
+            const display = document.getElementById('speedValue');
+            if (speedMultiplier === 0) {
+                display.innerText = "1 giây = 0 phút (Dừng)";
+                isRunning = false;
+            } else {
+                display.innerText = `1 giây = ${speedMultiplier} phút`;
+                isRunning = true;
+            }
+        });
+
+        document.getElementById('dateInput2').addEventListener('change', function () {
+            updateMapFromInputs();
+        });
+
+        document.getElementById('timeInput2').addEventListener('change', function () {
+            updateMapFromInputs();
+        });
+
+        function toggleNavMenu() {
+            const menu = document.getElementById('navMenu');
+            if (menu) {
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            }
+        }
+        function navigateTo(url) {
+            window.location.href = url;
+        }
+
+        function updateMapFromInputs() {
+            const dateVal = document.getElementById('dateInput2').value;
+            const timeVal = document.getElementById('timeInput2').value;
+
+            if (dateVal && timeVal) {
+                simDate = new Date(`${dateVal}T${timeVal}`);
+                document.getElementById('dateInput').value = dateVal;
+                document.getElementById('timeInput').value = timeVal;
+                updateSimTimeDisplay();
+                updateSkyPhysics();
+            }
+        }
+
+        window.onload = init;
+
+        function initLocationPicker() {
+            locationMap = L.map('locationPicker').setView([21.0285, 105.8542], 8);
+            L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                attribution: '© Google Maps'
+            }).addTo(locationMap);
+
+            locationMap.on('click', (e) => {
+                const { lat, lng } = e.latlng;
+                if (locationMarker) locationMap.removeLayer(locationMarker);
+                locationMarker = L.marker([lat, lng]).addTo(locationMap);
+                selectedCoords = { lat: lat, lon: lng };
+                document.getElementById('selectedLocation').innerText = `Lat: ${lat.toFixed(4)}, Lon: ${lng.toFixed(4)}`;
+            });
+            selectedCoords = { lat: 21.0285, lon: 105.8542 };
+            locationMarker = L.marker([21.0285, 105.8542]).addTo(locationMap);
+        }
+
+        let currentPages = {
+            guidePage: 1,
+            eduPage: 1,
+            quizPage: 1
+        };
+
+        let quizAnswers = {
+            1: null,
+            2: null,
+            3: null,
+            4: null
+        };
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                openModal('guideModal');
+            }, 500);
+        });
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function selectAnswer(pageNum, answer) {
+            const options = document.querySelectorAll(`#quizPage${pageNum} .quiz-option`);
+            options.forEach(opt => opt.classList.remove('selected'));
+
+            event.target.classList.add('selected');
+            quizAnswers[pageNum] = answer;
+
+            document.getElementById(`submitBtn${pageNum}`).disabled = false;
+        }
+
+        function checkAnswer(pageNum, correctAnswer) {
+            const userAnswer = quizAnswers[pageNum];
+            const resultDiv = document.getElementById(`result${pageNum}`);
+            const options = document.querySelectorAll(`#quizPage${pageNum} .quiz-option`);
+
+            if (!userAnswer) {
+                resultDiv.textContent = 'Vui lòng chọn một đáp án!';
+                resultDiv.className = 'quiz-result show wrong';
+                return;
+            }
+
+            options.forEach(opt => {
+                opt.style.pointerEvents = 'none';
+                if (pageNum <= 2) {
+                    if (opt.textContent.startsWith(correctAnswer)) {
+                        opt.classList.add('correct');
+                    } else if (opt.classList.contains('selected')) {
+                        opt.classList.add('wrong');
+                    }
+                } else {
+                    if ((correctAnswer === 'true' && opt.textContent.includes('Đúng')) ||
+                        (correctAnswer === 'false' && opt.textContent.includes('Sai'))) {
+                        opt.classList.add('correct');
+                    } else if (opt.classList.contains('selected')) {
+                        opt.classList.add('wrong');
+                    }
+                }
+            });
+
+            if (userAnswer === correctAnswer) {
+                resultDiv.textContent = '✓ Chính xác!';
+                resultDiv.className = 'quiz-result show correct';
+            } else {
+                resultDiv.textContent = '✗ Sai rồi! Đáp án đúng là: ' + correctAnswer;
+                resultDiv.className = 'quiz-result show wrong';
+            }
+
+            document.getElementById(`submitBtn${pageNum}`).disabled = true;
+        }
+
+        function resetQuiz(pageNum) {
+            quizAnswers[pageNum] = null;
+            const options = document.querySelectorAll(`#quizPage${pageNum} .quiz-option`);
+            options.forEach(opt => {
+                opt.classList.remove('selected', 'correct', 'wrong');
+                opt.style.pointerEvents = 'auto';
+            });
+            document.getElementById(`result${pageNum}`).className = 'quiz-result';
+            document.getElementById(`submitBtn${pageNum}`).disabled = false;
+        }
+
+        function changePage(prefix, direction) {
+            let totalPages;
+            if (prefix === 'guidePage') totalPages = 3;
+            else if (prefix === 'eduPage') totalPages = 6;
+            else if (prefix === 'quizPage') totalPages = 4;
+
+            let currentPage = currentPages[prefix];
+
+            document.getElementById(`${prefix}${currentPage}`).classList.remove('active');
+
+            currentPage += direction;
+            if (currentPage > totalPages) currentPage = 1;
+            if (currentPage < 1) currentPage = totalPages;
+
+            currentPages[prefix] = currentPage;
+            document.getElementById(`${prefix}${currentPage}`).classList.add('active');
+
+            const numId = prefix === 'guidePage' ? 'guideNum' : (prefix === 'eduPage' ? 'eduNum' : 'quizNum');
+            document.getElementById(numId).textContent = currentPage;
+
+            if (prefix === 'quizPage') {
+                resetQuiz(currentPage);
+            }
+        }
+
+        window.onclick = function (event) {
+            if (event.target.className === 'modal-overlay') {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

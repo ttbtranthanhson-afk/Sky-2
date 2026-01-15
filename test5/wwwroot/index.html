@@ -1,0 +1,154 @@
+﻿<!DOCTYPE html>
+<html lang="vi"> 
+<head>
+    <meta charset="UTF-8">
+    <title>Trái Đất và Bầu Trời</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@700;800&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: black;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Nền ảnh */
+        .background {
+            position: fixed;
+            inset: 0;
+            background: url("images/earth.jpeg") center / cover no-repeat;
+            z-index: -1;
+        }
+
+        /* Lớp phủ mờ */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        /* Tiêu đề */
+        .title {
+            position: absolute;
+            top: 12%;
+            left: 6%;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 68px;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+
+        /* Khung nút */
+        .menu {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+
+            .menu.show {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            /* Nút */
+            .menu button {
+                width: 340px;
+                padding: 18px;
+                font-size: 20px;
+                font-family: 'Montserrat', sans-serif;
+                font-weight: 600;
+                color: white;
+                background: #0b0f1a; /* nền đặc */
+                border: 2px solid #3fa9f5; /* viền xanh vũ trụ */
+                border-radius: 14px;
+                cursor: pointer;
+                transition: all 0.25s ease;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            }
+
+
+                .menu button:hover {
+                    background: #3fa9f5;
+                    color: black;
+                    transform: scale(1.06);
+                }
+
+        /* Gợi ý click */
+        .hint {
+            position: absolute;
+            bottom: 5%;
+            width: 100%;
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%,100% {
+                opacity: 0.4;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body onclick="showMenu()">
+
+    <div class="background"></div>
+    <div class="overlay"></div>
+
+    <div class="title">
+        Trái đất và<br>Bầu trời
+    </div>
+
+    <div class="menu" id="menu">
+        <button onclick="go(event, 'star_map.html')">Bản đồ sao</button>
+        <button onclick="go(event, 'solar_system.html')">Hệ mặt trời</button>
+        <button onclick="go(event, 'sun_lunar_tide.html')">Nhật thực, nguyệt thực <p>và thủy triều</p></button>
+    </div>
+
+    <div class="hint">Nhấn vào màn hình để bắt đầu</div>
+
+    <script>
+    let opened = false;
+
+    function showMenu() {
+        if (opened) return;
+        opened = true;
+        document.getElementById("menu").classList.add("show");
+        document.querySelector(".hint").style.display = "none";
+    }
+
+    function go(event, link) {
+        event.stopPropagation(); 
+        window.location.href = link;
+    }
+    </script>
+
+</body>
+</html>
