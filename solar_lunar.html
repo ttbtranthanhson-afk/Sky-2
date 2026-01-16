@@ -1,0 +1,1596 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Mặt Trời 3D - Nhật Thực & Nguyệt Thực</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+            font-family: Arial, sans-serif;
+        }
+
+        #controls {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.85);
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 320px;
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: #4a90e2;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .value-display {
+            font-size: 12px;
+            color: #4a90e2;
+            margin-top: 3px;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        input[type="date"], input[type="time"] {
+            width: 100%;
+            padding: 6px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 4px;
+            color: white;
+            font-size: 13px;
+        }
+
+        .time-display {
+            background: rgba(74, 144, 226, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 13px;
+            border: 1px solid rgba(74, 144, 226, 0.3);
+        }
+
+        button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 5px;
+            margin-top: 8px;
+        }
+
+            button:hover {
+                background: #357abd;
+            }
+
+        #menuBtn {
+            position: fixed;
+            top: 20px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.3), rgba(74, 144, 226, 0.5));
+            border: 2px solid rgba(74, 144, 226, 0.6);
+            color: white;
+            border-radius: 50%;
+            z-index: 100;
+            padding: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+            #menuBtn:hover {
+                transform: scale(1.1);
+            }
+
+        .bar {
+            width: 100%;
+            height: 3px;
+            background: white;
+            margin: 5px 0;
+        }
+
+        #navMenu {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 10px;
+            z-index: 100;
+            display: none;
+        }
+
+            #navMenu button {
+                margin: 5px 0;
+            }
+
+        #eduBtn, #quizBtn {
+            position: fixed;
+            top: 20px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.3), rgba(74, 144, 226, 0.5));
+            border: 2px solid rgba(74, 144, 226, 0.6);
+            color: white;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #eduBtn {
+            right: 100px;
+        }
+
+        #quizBtn {
+            right: 170px;
+            background: linear-gradient(135deg, rgba(39, 174, 96, 0.3), rgba(39, 174, 96, 0.5));
+            border-color: rgba(39, 174, 96, 0.6);
+        }
+
+            #eduBtn:hover, #quizBtn:hover {
+                transform: scale(1.1);
+            }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 0 30px rgba(74, 144, 226, 0.3);
+        }
+
+        .modal-content {
+            background: rgba(20, 20, 30, 0.95);
+            border: 1px solid #4a90e2;
+            padding: 20px;
+            padding-bottom: 70px;
+            border-radius: 15px;
+            width: 500px;
+            height: 380px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            color: white;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(74, 144, 226, 0.3);
+            overflow: hidden;
+        }
+
+        .edu-theme {
+            border-color: #4a90e2;
+            box-shadow: 0 0 30px rgba(74, 144, 226, 0.3);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #aaa;
+            z-index: 10;
+            line-height: 1;
+            padding: 5px;
+        }
+
+            .close-btn:hover {
+                color: white;
+            }
+
+        .modal-page {
+            display: none;
+            height: 100%;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+            .modal-page.active {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                animation: fadeIn 0.3s;
+            }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: rgba(20, 20, 30, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 0;
+        }
+
+        .modal-content .modal-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .nav-arrow {
+            background: #333;
+            border: none;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+            .nav-arrow:hover {
+                background: #4a90e2;
+                transform: scale(1.05);
+            }
+
+        .page-indicator {
+            font-size: 14px;
+            color: #888;
+            font-weight: 500;
+        }
+
+        .large-modal {
+            width: 500px;
+            height: 380px;
+        }
+
+        .modal-page > p {
+            text-align: center;
+            line-height: 1.6;
+            margin: 0;
+            max-width: 95%;
+        }
+
+        .modal-page > h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #4a90e2;
+        }
+
+        .img-col {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+            .img-col img {
+                max-width: 100%;
+                height: auto;
+                max-height: 180px;
+                border-radius: 8px;
+                border: 1px solid rgba(241, 196, 15, 0.3);
+                box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            }
+
+        .quiz-theme {
+            border-color: #27ae60;
+            box-shadow: 0 0 30px rgba(39, 174, 96, 0.3);
+        }
+
+        .quiz-question {
+            font-size: 18px;
+            font-weight: bold;
+            color: #27ae60;
+            margin-bottom: 20px;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .quiz-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            color: white;
+            font-size: 15px;
+        }
+
+            .quiz-option:hover {
+                background: rgba(39, 174, 96, 0.2);
+                border-color: #27ae60;
+            }
+
+            .quiz-option.selected {
+                background: rgba(39, 174, 96, 0.3);
+                border-color: #27ae60;
+            }
+
+            .quiz-option.correct {
+                background: rgba(39, 174, 96, 0.5);
+                border-color: #27ae60;
+            }
+
+            .quiz-option.wrong {
+                background: rgba(231, 76, 60, 0.5);
+                border-color: #e74c3c;
+            }
+
+        .quiz-result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: none;
+        }
+
+            .quiz-result.show {
+                display: block;
+            }
+
+            .quiz-result.correct {
+                background: rgba(39, 174, 96, 0.3);
+                color: #27ae60;
+            }
+
+            .quiz-result.wrong {
+                background: rgba(231, 76, 60, 0.3);
+                color: #e74c3c;
+            }
+
+        .quiz-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 15px;
+            transition: all 0.2s;
+        }
+
+            .quiz-btn:hover {
+                background: #229954;
+            }
+
+            .quiz-btn:disabled {
+                background: #7f8c8d;
+                cursor: not-allowed;
+            }
+
+        #infoPanel {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 33%;
+            min-width: 380px;
+            background: rgba(10,10,20,0.95);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 15px 15px 0 0;
+            display: none;
+            z-index: 50;
+            box-shadow: 0 0 25px rgba(74,144,226,0.4);
+        }
+
+        #infoContent {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        #infoButtons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+            #infoButtons button {
+                background: #4a90e2;
+                border: none;
+                padding: 6px 10px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 12px;
+            }
+
+        .exit-btn {
+            background: #e74c3c;
+        }
+
+        /* Controls cho nhật thực/nguyệt thực */
+        #eclipseControls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            color: white;
+            background: rgba(0,0,0,0.85);
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 320px;
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .eclipse-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+            .eclipse-buttons button {
+                flex: 1;
+                padding: 10px;
+            }
+
+        .solar-btn {
+            background: #e74c3c;
+        }
+
+        .lunar-btn {
+            background: #9b59b6;
+        }
+
+        .tide-btn {
+            background: #3498db;
+        }
+
+        .reset-btn {
+            background: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <h3>Điều Khiển</h3>
+        <div class="control-group">
+            <label>Chọn Ngày:</label>
+            <input type="date" id="dateInput">
+        </div>
+        <div class="control-group">
+            <label>Chọn Giờ:</label>
+            <input type="time" id="timeInput">
+        </div>
+        <div class="control-group">
+            <label>Tốc Độ Mô Phỏng:</label>
+            <input type="range" id="speedSlider" min="0" max="10" step="1" value="1">
+            <div class="value-display" id="speedValue">1 giây = 10 giờ</div>
+        </div>
+        <div class="time-display">
+            <strong>Thời Gian Mô Phỏng:</strong>
+            <div id="simTime" style="margin-top: 5px; font-size: 14px;"></div>
+        </div>
+        <button onclick="toggleSimulation()">Tạm Dừng/Chạy</button>
+        <button onclick="resetToNow()">Về Hiện Tại</button>
+    </div>
+
+    <div id="eclipseControls">
+        <h3>Hiện Tượng Thiên Văn</h3>
+        <div class="eclipse-buttons">
+            <button class="solar-btn" onclick="showSolarEclipse()">Nhật Thực</button>
+            <button class="lunar-btn" onclick="showLunarEclipse()">Nguyệt Thực</button>
+        </div>
+        <div class="eclipse-buttons">
+            <button class="tide-btn" onclick="showTideEffect()">Thủy Triều</button>
+            <button class="reset-btn" onclick="resetEclipse()">Đặt Lại</button>
+        </div>
+        <div class="value-display" id="eclipseStatus" style="margin-top: 10px;">Chế độ: Bình thường</div>
+    </div>
+
+    <div id="infoPanel">
+        <div id="infoContent"></div>
+
+        <div id="infoButtons">
+            <button onclick="showDefaultInfo()">Thông tin</button>
+            <button onclick="showStats()">Thông số</button>
+            <button class="exit-btn" onclick="exitFocus()">✕</button>
+        </div>
+    </div>
+
+    <button id="menuBtn" onclick="toggleNavMenu()">
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+    </button>
+
+    <div id="navMenu">
+        <button onclick="navigateTo('star_map.html')">Bản Đồ Sao</button>
+        <button onclick="navigateTo('solar_system.html')">Hệ mặt trời</button>
+    </div>
+
+    <button id="eduBtn" onclick="openModal('eduModal')">?</button>
+
+    <div id="guideModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('guideModal')">&times;</span>
+            <div id="guidePage1" class="modal-page active">
+                <h3>Hướng Dẫn Điều Khiển</h3>
+                <p><b>Xoay:</b> Nhấn giữ chuột trái và kéo.</p>
+                <p><b>Phóng to/nhỏ:</b> Sử dụng con lăn chuột.</p>
+                <p><b>Xem thông tin:</b> Click trực tiếp vào một hành tinh.</p>
+            </div>
+            <div id="guidePage2" class="modal-page">
+                <h3>Chức Năng Hệ Thống</h3>
+                <p><b>Thời gian:</b> Bạn có thể chọn ngày/giờ bất kỳ để xem vị trí các hành tinh trong quá khứ hoặc tương lai.</p>
+                <p><b>Tốc độ:</b> Điều chỉnh thanh trượt để tăng tốc mô phỏng.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="nav-arrow" onclick="changePage('guidePage', -1)">❮</button>
+                <span class="page-indicator">Phần <span id="guideNum">1</span>/2</span>
+                <button class="nav-arrow" onclick="changePage('guidePage', 1)">❯</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="eduModal" class="modal-overlay">
+        <div class="modal-content edu-theme">
+            <span class="close-btn" onclick="closeModal('eduModal')">&times;</span>
+            <div id="eduPage1" class="modal-page active">
+                <h3>Nhật Thực</h3>
+                <p>Nhật thực xảy ra khi Mặt Trăng đi qua giữa Trái Đất và Mặt Trời, che khuất một phần hoặc toàn bộ Mặt Trời khi nhìn từ Trái Đất.</p>
+                <p>Điều này chỉ xảy ra vào thời điểm trăng non (new moon) khi Mặt Trăng nằm giữa Trái Đất và Mặt Trời.</p>
+                <p>Do quỹ đạo Mặt Trăng nghiêng 5 độ so với mặt phẳng hoàng đạo, nên không phải lần trăng non nào cũng xảy ra nhật thực.</p>
+            </div>
+            <div id="eduPage2" class="modal-page">
+                <h3>Nguyệt Thực</h3>
+                <p>Nguyệt thực xảy ra khi Trái Đất đi qua giữa Mặt Trời và Mặt Trăng, che khuất ánh sáng từ Mặt Trời chiếu lên Mặt Trăng.</p>
+                <p>Nguyệt thực chỉ xảy ra vào những ngày trăng tròn (full moon) khi Trái Đất nằm giữa Mặt Trời và Mặt Trăng.</p>
+                <p>Khi xảy ra nguyệt thực toàn phần, Mặt Trăng vẫn nhận được một ít ánh sáng Mặt Trời bị khúc xạ qua khí quyển Trái Đất, khiến nó có màu đỏ cam.</p>
+            </div>
+            <div id="eduPage3" class="modal-page">
+                <h3>Thủy Triều</h3>
+                <p>Thủy triều là hiện tượng nước biển dâng lên và hạ xuống do lực hấp dẫn của Mặt Trăng và Mặt Trời.</p>
+                <p>Khi Mặt Trăng, Mặt Trời và Trái Đất thẳng hàng (trăng non hoặc trăng tròn), thủy triều đạt cực đại (triều cường).</p>
+                <p>Khi Mặt Trăng và Mặt Trời tạo thành góc vuông với Trái Đất (trăng lưỡi liềm), thủy triều ở mức thấp nhất (triều kém).</p>
+            </div>
+
+            <div class="modal-footer">
+                <button class="nav-arrow" onclick="changePage('eduPage', -1)">❮</button>
+                <span class="page-indicator">Kiến thức <span id="eduNum">1</span>/3</span>
+                <button class="nav-arrow" onclick="changePage('eduPage', 1)">❯</button>
+            </div>
+        </div>
+    </div>
+
+    <button id="quizBtn" onclick="openModal('quizModal')">+</button>
+    <div id="quizModal" class="modal-overlay">
+        <div class="modal-content quiz-theme">
+            <span class="close-btn" onclick="closeModal('quizModal')">&times;</span>
+
+            <div id="quizPage1" class="modal-page active">
+                <p class="quiz-question">Hiện tượng nhật thực xảy ra khi nào?</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="selectAnswer(1, 'A')">A. Trăng tròn</div>
+                    <div class="quiz-option" onclick="selectAnswer(1, 'B')">B. Trăng non</div>
+                    <div class="quiz-option" onclick="selectAnswer(1, 'C')">C. Trăng khuyết</div>
+                    <div class="quiz-option" onclick="selectAnswer(1, 'D')">D. Bất kỳ thời điểm nào</div>
+                </div>
+                <div class="quiz-result" id="result1"></div>
+                <button class="quiz-btn" onclick="checkAnswer(1, 'B')" id="submitBtn1">Kiểm tra</button>
+            </div>
+
+            <div id="quizPage2" class="modal-page">
+                <p class="quiz-question">Nguyệt thực xảy ra khi nào?</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="selectAnswer(2, 'A')">A. Mặt Trăng che Mặt Trời</div>
+                    <div class="quiz-option" onclick="selectAnswer(2, 'B')">B. Trái Đất che Mặt Trăng</div>
+                    <div class="quiz-option" onclick="selectAnswer(2, 'C')">C. Mặt Trời che Mặt Trăng</div>
+                    <div class="quiz-option" onclick="selectAnswer(2, 'D')">D. Mặt Trăng tự phát sáng</div>
+                </div>
+                <div class="quiz-result" id="result2"></div>
+                <button class="quiz-btn" onclick="checkAnswer(2, 'B')" id="submitBtn2">Kiểm tra</button>
+            </div>
+
+            <div id="quizPage3" class="modal-page">
+                <p class="quiz-question">Thủy triều mạnh nhất (triều cường) xảy ra khi nào?</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="selectAnswer(3, 'A')">A. Trăng non và trăng tròn</div>
+                    <div class="quiz-option" onclick="selectAnswer(3, 'B')">B. Trăng lưỡi liềm</div>
+                    <div class="quiz-option" onclick="selectAnswer(3, 'C')">C. Trăng khuyết</div>
+                    <div class="quiz-option" onclick="selectAnswer(3, 'D')">D. Không có mẫu nào</div>
+                </div>
+                <div class="quiz-result" id="result3"></div>
+                <button class="quiz-btn" onclick="checkAnswer(3, 'A')" id="submitBtn3">Kiểm tra</button>
+            </div>
+
+            <div id="quizPage4" class="modal-page">
+                <p class="quiz-question">Mặt Trăng quay quanh Trái Đất với chu kỳ khoảng bao nhiêu ngày?</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="selectAnswer(4, 'A')">A. 27.3 ngày</div>
+                    <div class="quiz-option" onclick="selectAnswer(4, 'B')">B. 29.5 ngày</div>
+                    <div class="quiz-option" onclick="selectAnswer(4, 'C')">C. 30 ngày</div>
+                    <div class="quiz-option" onclick="selectAnswer(4, 'D')">D. 31 ngày</div>
+                </div>
+                <div class="quiz-result" id="result4"></div>
+                <button class="quiz-btn" onclick="checkAnswer(4, 'A')" id="submitBtn4">Kiểm tra</button>
+            </div>
+
+            <div class="modal-footer">
+                <button class="nav-arrow" onclick="changePage('quizPage', -1)">❮</button>
+                <span class="page-indicator">Câu hỏi <span id="quizNum">1</span>/4</span>
+                <button class="nav-arrow" onclick="changePage('quizPage', 1)">❯</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <script>
+        const SPEED_LEVELS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+
+        /*CẤU HÌNH*/
+        const AU = 15;
+        const CAMERA_START = 120;
+
+        /*BIẾN*/
+        let scene, camera, renderer;
+        let sun, earth, moon;
+        let cameraDistance = CAMERA_START;
+        let rotX = 0.4, rotY = 0;
+        let dragging = false, prevX = 0, prevY = 0;
+        let focusedObject = null;
+        let savedCameraState = null;
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        let targetDistance = CAMERA_START;
+        let initialCameraState = null;
+        let currentLookAt = new THREE.Vector3(0, 0, 0);
+        let targetLookAt = new THREE.Vector3(0, 0, 0);
+        let targetRotX = rotX;
+        let targetRotY = rotY;
+        const moonOrbitRadius = 2.5;
+        const MOON_INCLINATION = THREE.MathUtils.degToRad(5.14);
+        const MOON_ORBIT_PERIOD = 27.321661; // ngày
+        const NODE_PRECESSION = THREE.MathUtils.degToRad(0.053); // ~19 năm
+
+        /*THỜI GIAN MÔ PHỎNG*/
+        const now = new Date();
+        let simDate = new Date(Date.UTC(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            now.getUTCDate(),
+            now.getUTCHours(),
+            now.getUTCMinutes(),
+            now.getUTCSeconds()
+        ));
+        let speedMultiplier = 10;
+        let isRunning = true;
+        let lastTime = Date.now();
+
+        /*TRẠNG THÁI NHẬT THỰC/NGUYỆT THỰC*/
+        let eclipseMode = 'none'; // 'none', 'solar', 'lunar', 'tide'
+        let moonOrbit;
+
+        /*DỮ LIỆU*/
+        const planetDescriptions = {
+            "Mặt Trời": `Mặt Trời là ngôi sao trung tâm của Hệ Mặt Trời, chiếm hơn 99,8% khối lượng toàn hệ. Nó tạo năng lượng bằng phản ứng nhiệt hạch, biến hydro thành heli. Ánh sáng và nhiệt từ Mặt Trời là điều kiện thiết yếu cho sự sống trên Trái Đất.`,
+            "Trái Đất": `Trái Đất là hành tinh duy nhất được biết đến có sự sống. Khoảng 70% bề mặt được bao phủ bởi nước. Khí quyển giàu nitơ và oxy giúp duy trì sự sống. Trái Đất quay nhanh quanh trục và quanh Mặt Trời.`,
+            "Mặt Trăng": `Mặt Trăng là vệ tinh tự nhiên duy nhất của Trái Đất, quay quanh Trái Đất với chu kỳ khoảng 27.3 ngày. Lực hấp dẫn của Mặt Trăng gây ra thủy triều trên Trái Đất. Mặt Trăng không có khí quyển đáng kể và bề mặt lỗ chỗ do va chạm với thiên thạch.`
+        };
+
+        /* CÁC HÀM XỬ LÝ VỊ TRÍ VÀ THỜI GIAN */
+        function calculatePlanetPosition(date) {
+            const J2000 = new Date(Date.UTC(2000, 0, 1, 12, 0, 0));
+            const daysSinceJ2000 = (date - J2000) / (1000 * 60 * 60 * 24);
+
+            const earthPeriod = 365.256; // ngày
+            const earthAngle = (daysSinceJ2000 / earthPeriod) * Math.PI * 2;
+
+            const earthDistance = AU * (1 - 0.0167 * Math.cos(earthAngle));
+
+            return {
+                earthAngle: earthAngle,
+                earthDistance: earthDistance
+            };
+        }
+
+        function calculateMoonPosition(date, earthAngle) {
+            const J2000 = new Date(Date.UTC(2000, 0, 1, 12));
+            const days = (date - J2000) / 86400000;
+
+            // Chu kỳ Synodic (từ trăng non đến trăng non) là ~29.53 ngày
+            // Chu kỳ Sidereal (vòng quay 360 độ thực tế) là ~27.32 ngày
+            const theta = (2 * Math.PI * days) / MOON_ORBIT_PERIOD;
+
+            let pos = new THREE.Vector3(
+                moonOrbitRadius * Math.cos(theta),
+                0,
+                moonOrbitRadius * Math.sin(theta)
+            );
+
+            // Nghiêng quỹ đạo
+            pos.applyAxisAngle(new THREE.Vector3(1, 0, 0), MOON_INCLINATION);
+
+            return {
+                relX: pos.x,
+                relY: pos.y,
+                relZ: pos.z,
+                angle: theta
+            };
+        }
+
+        // Tìm thời điểm trăng non (nhật thực) gần nhất
+        function findNewMoon(currentDate) {
+            const lunarCycle = 29.530588; // Chu kỳ trăng trung bình (ngày)
+            const J2000 = new Date(Date.UTC(2000, 0, 1, 12, 0, 0));
+            const daysSinceJ2000 = (currentDate - J2000) / (1000 * 60 * 60 * 24);
+
+            // Tính số chu kỳ đã trôi qua
+            const cyclesSinceJ2000 = daysSinceJ2000 / lunarCycle;
+            const fractionalCycle = cyclesSinceJ2000 - Math.floor(cyclesSinceJ2000);
+
+            // Tính thời điểm trăng non gần nhất
+            let daysToNewMoon;
+            if (fractionalCycle < 0.5) {
+                daysToNewMoon = -fractionalCycle * lunarCycle;
+            } else {
+                daysToNewMoon = (1 - fractionalCycle) * lunarCycle;
+            }
+
+            const newMoonDate = new Date(currentDate.getTime() + daysToNewMoon * 24 * 60 * 60 * 1000);
+
+            return newMoonDate;
+        }
+
+        // Tìm thời điểm trăng tròn (nguyệt thực) gần nhất
+        function findFullMoon(currentDate) {
+            const lunarCycle = 29.530588;
+            const newMoon = findNewMoon(currentDate);
+            const fullMoonDate = new Date(newMoon.getTime() + (lunarCycle / 2) * 24 * 60 * 60 * 1000);
+            return fullMoonDate;
+        }
+
+        function updatePlanetPositions() {
+            const positions = calculatePlanetPosition(simDate);
+            const ex = positions.earthDistance * Math.cos(positions.earthAngle);
+            const ez = positions.earthDistance * Math.sin(positions.earthAngle);
+            earth.position.set(ex, 0, ez);
+
+            const mPos = calculateMoonPosition(simDate, positions.earthAngle);
+            moon.position.set(
+                earth.position.x + mPos.relX,
+                earth.position.y + mPos.relY,
+                earth.position.z + mPos.relZ
+            );
+
+            moon.rotation.y = -mPos.angle + Math.PI;
+            if (moonOrbit) moonOrbit.position.copy(earth.position);
+        }
+
+        function updateSimTime() {
+            const pad = (n) => String(n).padStart(2, '0');
+            const dateStr = `${pad(simDate.getDate())}/${pad(simDate.getMonth() + 1)}/${simDate.getFullYear()}`;
+            const timeStr = `${pad(simDate.getHours())}:${pad(simDate.getMinutes())}:${pad(simDate.getSeconds())}`;
+            document.getElementById('simTime').textContent = `${dateStr} ${timeStr}`;
+        }
+
+        /* ĐIỀU KHIỂN */
+        function toggleSimulation() {
+            isRunning = !isRunning;
+            if (isRunning) lastTime = Date.now();
+        }
+
+        function onSpeedChange() {
+            const speedSlider = document.getElementById('speedSlider');
+            const speedDisplay = document.getElementById('speedValue');
+            if (speedSlider) {
+                const index = parseInt(speedSlider.value);
+                speedMultiplier = SPEED_LEVELS[index];
+                if (speedDisplay) {
+                    const hours = speedMultiplier;
+                    speedDisplay.textContent = `1 giây = ${hours} giờ`;
+                }
+            }
+        }
+
+        function onDateTimeChange() {
+            const dateInput = document.getElementById('dateInput');
+            const timeInput = document.getElementById('timeInput');
+
+            if (dateInput && timeInput && dateInput.value && timeInput.value) {
+                const [year, month, day] = dateInput.value.split('-').map(Number);
+                const [hours, minutes] = timeInput.value.split(':').map(Number);
+
+                simDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, 0));
+                updatePlanetPositions();
+                updateSimTime();
+            }
+        }
+
+        function resetToNow() {
+            simDate = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            document.getElementById('dateInput').value = `${simDate.getFullYear()}-${pad(simDate.getMonth() + 1)}-${pad(simDate.getDate())}`;
+            document.getElementById('timeInput').value = `${pad(simDate.getHours())}:${pad(simDate.getMinutes())}`;
+            updatePlanetPositions();
+            updateSimTime();
+            resetEclipse();
+        }
+
+        // Tìm thời điểm trăng non gần nhất trong tương lai
+        function findNewMoon(currentDate) {
+            const lunarCycle = 29.530588; // Chu kỳ trăng trung bình (ngày)
+            const J2000 = new Date(Date.UTC(2000, 0, 1, 12, 0, 0));
+            const daysSinceJ2000 = (currentDate - J2000) / (1000 * 60 * 60 * 24);
+
+            // Tính số chu kỳ đã trôi qua
+            const cyclesSinceJ2000 = daysSinceJ2000 / lunarCycle;
+            const fractionalCycle = cyclesSinceJ2000 - Math.floor(cyclesSinceJ2000);
+
+            // Tính thời điểm trăng non gần nhất
+            let daysToNewMoon;
+            if (fractionalCycle < 0.5) {
+                daysToNewMoon = -fractionalCycle * lunarCycle;
+            } else {
+                daysToNewMoon = (1 - fractionalCycle) * lunarCycle;
+            }
+
+            let newMoonDate = new Date(currentDate.getTime() + daysToNewMoon * 24 * 60 * 60 * 1000);
+
+            // Nếu thời điểm này là quá khứ, nhảy tới chu kỳ tiếp theo (tương lai)
+            if (newMoonDate < currentDate) {
+                newMoonDate = new Date(newMoonDate.getTime() + lunarCycle * 24 * 60 * 60 * 1000);
+            }
+
+            return newMoonDate;
+        }
+
+        // Tìm thời điểm trăng tròn gần nhất trong tương lai
+        function findFullMoon(currentDate) {
+            const lunarCycle = 29.530588;
+            let newMoon = findNewMoon(currentDate);
+            let fullMoonDate = new Date(newMoon.getTime() + (lunarCycle / 2) * 24 * 60 * 60 * 1000);
+
+            // Nếu thời điểm này là quá khứ, nhảy tới chu kỳ tiếp theo
+            if (fullMoonDate < currentDate) {
+                fullMoonDate = new Date(fullMoonDate.getTime() + lunarCycle * 24 * 60 * 60 * 1000);
+            }
+
+            return fullMoonDate;
+        }
+        // HÀM TÌM NHẬT THỰC (Trái Đất giữa Mặt Trời và Mặt Trăng)
+        function showSolarEclipse() {
+            eclipseMode = 'solar';
+            document.getElementById('eclipseStatus').textContent = 'Chế độ: Nhật Thực';
+
+            // Bước 1: Tìm trăng tròn gần nhất trong tương lai
+            const fullMoonDate = findFullMoon(simDate);
+
+            // Bước 2: Tinh chỉnh thời điểm cho thẳng hàng (Trái Đất giữa Mặt Trời và Mặt Trăng)
+            let bestDate = fullMoonDate;
+            let bestAlignment = Math.PI; // Góc lớn nhất có thể
+
+            // Quét trong khoảng ±2 ngày với bước 0.1 giờ để chính xác hơn
+            for (let hours = -48; hours <= 48; hours += 0.1) {
+                const testDate = new Date(fullMoonDate.getTime() + hours * 60 * 60 * 1000);
+
+                const pos = calculatePlanetPosition(testDate);
+                const earthPos = new THREE.Vector3(
+                    pos.earthDistance * Math.cos(pos.earthAngle),
+                    0,
+                    pos.earthDistance * Math.sin(pos.earthAngle)
+                );
+
+                const mPos = calculateMoonPosition(testDate, pos.earthAngle);
+                const moonPos = new THREE.Vector3(
+                    earthPos.x + mPos.relX,
+                    earthPos.y + mPos.relY,
+                    earthPos.z + mPos.relZ
+                );
+
+                const sunPos = new THREE.Vector3(0, 0, 0);
+
+                // Tính góc giữa Mặt Trời-Trái Đất-Mặt Trăng
+                const sunToEarth = new THREE.Vector3().subVectors(earthPos, sunPos);
+                const earthToMoon = new THREE.Vector3().subVectors(moonPos, earthPos);
+
+                // Góc giữa Mặt Trời-Trái Đất và Trái Đất-Mặt Trăng
+                const angle = Math.PI - sunToEarth.angleTo(earthToMoon); // Độ lệch so với 180°
+
+                // Đảm bảo Trái Đất ở giữa (Mặt Trăng ở phía đối diện với Mặt Trời)
+                const dotProduct = earthToMoon.dot(sunToEarth);
+
+                // Chỉ chọn nếu góc lệch < 0.1 rad (~5.7°) và dotProduct < 0
+                if (angle < bestAlignment && angle < 0.1 && dotProduct < 0) {
+                    bestAlignment = angle;
+                    bestDate = testDate;
+                }
+            }
+
+            // Bước 2.5: Nếu bestDate <= simDate, nhảy tới chu kỳ tiếp theo
+            const lunarCycle = 29.530588;
+            if (bestDate <= simDate) {
+                bestDate = new Date(bestDate.getTime() + lunarCycle * 24 * 60 * 60 * 1000);
+                // (Có thể lặp lại bước 2 nếu cần, nhưng tạm thời dùng như vậy)
+            }
+
+            // Bước 3: Cập nhật thời gian mô phỏng
+            simDate = bestDate;
+
+            // Cập nhật vị trí các thiên thể
+            updatePlanetPositions();
+            updateSimTime();
+
+            // Dừng mô phỏng
+            isRunning = false;
+
+            // Bước 4: Tính toán loại nhật thực
+            const dSun = earth.position.distanceTo(sun.position);
+            const dMoon = earth.position.distanceTo(moon.position);
+
+            // Kích thước góc (angular size)
+            const sunAngularSize = Math.atan(3 / dSun) * 2; // Mặt Trời bán kính 3
+            const moonAngularSize = Math.atan(0.27 / dMoon) * 2; // Mặt Trăng bán kính 0.27
+            const ratio = moonAngularSize / sunAngularSize;
+
+            let eclipseType = "MỘT PHẦN";
+            let description = "Trái Đất che một phần Mặt Trăng.";
+
+            if (ratio > 1.0 && bestAlignment < 0.05) { // Thêm điều kiện góc lệch nhỏ
+                eclipseType = "TOÀN PHẦN";
+                description = "Trái Đất che hoàn toàn Mặt Trăng.";
+            } else if (ratio > 0.9 && bestAlignment < 0.1) {
+                eclipseType = "TOÀN PHẦN/HÌNH KHĂN";
+                description = "Gần như toàn phần.";
+            }
+
+            // Bước 5: Cập nhật UI
+            const pad = (n) => String(n).padStart(2, '0');
+            document.getElementById('dateInput').value =
+                `${simDate.getFullYear()}-${pad(simDate.getMonth() + 1)}-${pad(simDate.getDate())}`;
+            document.getElementById('timeInput').value =
+                `${pad(simDate.getHours())}:${pad(simDate.getMinutes())}`;
+
+            // Focus vào Mặt Trăng để quan sát
+            focusOnObject(moon);
+
+            // Hiển thị thông tin
+            document.getElementById('infoContent').innerHTML = `
+<div style="text-align: center; margin-bottom: 10px;">
+    <strong style="color: #ff9900; font-size: 18px;">NHẬT THỰC ${eclipseType}</strong>
+</div>
+<div style="margin-bottom: 10px;">
+    <strong>Thời gian:</strong> ${simDate.toLocaleString('vi-VN')}
+</div>
+<div style="margin-bottom: 10px;">
+    <strong>Khoảng cách Trái Đất:</strong> ${(dMoon * AU).toFixed(0)} km<br>
+    <strong>Tỷ lệ kích thước góc:</strong> ${ratio.toFixed(3)}<br>
+    <strong>Góc lệch:</strong> ${THREE.MathUtils.radToDeg(bestAlignment).toFixed(2)}°
+</div>
+<div style="background: rgba(255, 100, 0, 0.1); padding: 10px; border-radius: 5px;">
+    ${description}<br><br>
+    <strong>Giải thích:</strong> Nhật thực xảy ra khi Trái Đất nằm giữa Mặt Trời và Mặt Trăng, 
+    che khuất Mặt Trăng. Hiện tượng này chỉ xảy ra vào thời điểm trăng tròn.
+</div>
+`;
+
+            console.log(`Đã tìm thấy nhật thực: ${eclipseType}, góc lệch: ${THREE.MathUtils.radToDeg(bestAlignment).toFixed(2)}°, ratio: ${ratio.toFixed(3)}`);
+        }
+
+        // HÀM TÌM NGUYỆT THỰC (Mặt Trăng giữa Trái Đất và Mặt Trời)
+        function showLunarEclipse() {
+            eclipseMode = 'lunar';
+            document.getElementById('eclipseStatus').textContent = 'Chế độ: Nguyệt Thực';
+
+            // Bước 1: Tìm trăng non gần nhất trong tương lai
+            const newMoonDate = findNewMoon(simDate);
+
+            // Bước 2: Tinh chỉnh thời điểm cho thẳng hàng (Mặt Trăng giữa Trái Đất và Mặt Trời)
+            let bestDate = newMoonDate;
+            let bestAlignment = Infinity;
+
+            // Quét trong khoảng ±2 ngày với bước 0.1 giờ để chính xác hơn
+            for (let hours = -48; hours <= 48; hours += 0.1) {
+                const testDate = new Date(newMoonDate.getTime() + hours * 60 * 60 * 1000);
+
+                // Tính vị trí các thiên thể
+                const pos = calculatePlanetPosition(testDate);
+                const earthPos = new THREE.Vector3(
+                    pos.earthDistance * Math.cos(pos.earthAngle),
+                    0,
+                    pos.earthDistance * Math.sin(pos.earthAngle)
+                );
+
+                const mPos = calculateMoonPosition(testDate, pos.earthAngle);
+                const moonPos = new THREE.Vector3(
+                    earthPos.x + mPos.relX,
+                    earthPos.y + mPos.relY,
+                    earthPos.z + mPos.relZ
+                );
+
+                const sunPos = new THREE.Vector3(0, 0, 0);
+
+                // Tính độ thẳng hàng: Trái Đất - Mặt Trăng - Mặt Trời
+                const earthToSun = new THREE.Vector3().subVectors(sunPos, earthPos);
+                const earthToMoon = new THREE.Vector3().subVectors(moonPos, earthPos);
+
+                // Góc giữa Trái Đất-Mặt Trời và Trái Đất-Mặt Trăng
+                const angle = earthToSun.angleTo(earthToMoon);
+
+                // Đảm bảo Mặt Trăng ở giữa (cùng hướng với Mặt Trời từ Trái Đất)
+                const dotProduct = earthToMoon.dot(earthToSun);
+
+                // Chỉ chọn nếu góc lệch < 0.1 rad (~5.7°) và dotProduct > 0
+                if (angle < bestAlignment && angle < 0.1 && dotProduct > 0) {
+                    bestAlignment = angle;
+                    bestDate = testDate;
+                }
+            }
+
+            // Bước 2.5: Nếu bestDate <= simDate, nhảy tới chu kỳ tiếp theo
+            const lunarCycle = 29.530588;
+            if (bestDate <= simDate) {
+                bestDate = new Date(bestDate.getTime() + lunarCycle * 24 * 60 * 60 * 1000);
+            }
+
+            // Bước 3: Cập nhật thời gian mô phỏng
+            simDate = bestDate;
+
+            // Cập nhật vị trí các thiên thể
+            updatePlanetPositions();
+            updateSimTime();
+
+            // Dừng mô phỏng
+            isRunning = false;
+
+            // Bước 4: Tính toán loại nguyệt thực
+            const dSun = earth.position.distanceTo(sun.position);
+            const dMoon = earth.position.distanceTo(moon.position);
+
+            // Kích thước góc (angular size)
+            const sunAngularSize = Math.atan(3 / dSun) * 2; // Mặt Trời bán kính 3
+            const moonAngularSize = Math.atan(0.27 / dMoon) * 2; // Mặt Trăng bán kính 0.27
+            const ratio = moonAngularSize / sunAngularSize;
+
+            let eclipseType = "MỘT PHẦN";
+            let description = "Mặt Trăng che một phần Mặt Trời.";
+
+            if (ratio > 1.0 && bestAlignment < 0.05) { // Thêm điều kiện góc lệch nhỏ
+                eclipseType = "TOÀN PHẦN";
+                description = "Mặt Trăng che hoàn toàn Mặt Trời, có thể thấy nhật hoa.";
+            } else if (ratio > 0.9 && bestAlignment < 0.1) {
+                eclipseType = "TOÀN PHẦN/HÌNH KHĂN";
+                description = "Gần như toàn phần, có thể thấy viền sáng của Mặt Trời.";
+            }
+
+            // Bước 5: Cập nhật UI
+            const pad = (n) => String(n).padStart(2, '0');
+            document.getElementById('dateInput').value =
+                `${simDate.getFullYear()}-${pad(simDate.getMonth() + 1)}-${pad(simDate.getDate())}`;
+            document.getElementById('timeInput').value =
+                `${pad(simDate.getHours())}:${pad(simDate.getMinutes())}`;
+
+            // Focus vào Trái Đất để quan sát
+            focusOnObject(earth);
+
+            // Hiển thị thông tin
+            document.getElementById('infoContent').innerHTML = `
+<div style="text-align: center; margin-bottom: 10px;">
+    <strong style="color: #ff4444; font-size: 18px;">NGUYỆT THỰC ${eclipseType}</strong>
+</div>
+<div style="margin-bottom: 10px;">
+    <strong>Thời gian:</strong> ${simDate.toLocaleString('vi-VN')}
+</div>
+<div style="margin-bottom: 10px;">
+    <strong>Khoảng cách Mặt Trăng:</strong> ${(dMoon * AU).toFixed(0)} km<br>
+    <strong>Tỷ lệ kích thước góc:</strong> ${ratio.toFixed(3)}<br>
+    <strong>Góc lệch:</strong> ${THREE.MathUtils.radToDeg(bestAlignment).toFixed(2)}°
+</div>
+<div style="background: rgba(255, 0, 0, 0.1); padding: 10px; border-radius: 5px;">
+    <strong>Giải thích:</strong> Nguyệt thực xảy ra khi Mặt Trăng nằm giữa Trái Đất và Mặt Trời, 
+    che khuất Mặt Trời. Hiện tượng này chỉ xảy ra vào thời điểm trăng non.
+</div>
+`;
+
+            console.log(`Đã tìm thấy nguyệt thực: ${eclipseType}, góc lệch: ${THREE.MathUtils.radToDeg(bestAlignment).toFixed(2)}°, ratio: ${ratio.toFixed(3)}`);
+        }
+        function resetEclipse() {
+            eclipseMode = 'none';
+            document.getElementById('eclipseStatus').textContent = 'Chế độ: Bình thường';
+
+            // Cập nhật lại vị trí theo thời gian hiện tại
+            updatePlanetPositions();
+
+            document.getElementById('infoContent').textContent = "Chế độ bình thường. Hệ Mặt Trời với Mặt Trời, Trái Đất và Mặt Trăng.";
+        }
+
+        function createLabel(text, fontSize = 128) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.font = `${fontSize}px Arial`;
+            const metrics = ctx.measureText(text);
+            canvas.width = metrics.width + fontSize * 0.8;
+            canvas.height = fontSize * 1.5;
+            ctx.font = `${fontSize}px Arial`;
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = fontSize * 0.12;
+            ctx.strokeText(text, canvas.width / 2, canvas.height / 2);
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+            const texture = new THREE.CanvasTexture(canvas);
+            return new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
+        }
+
+        /* BẢN ĐỒ SAO TỪ D3.JS */
+        async function createStarfieldBackground(scene) {
+            try {
+                const size = 2048;
+                const canvas = document.createElement('canvas');
+                canvas.width = size; canvas.height = size / 2;
+                const ctx = canvas.getContext('2d');
+                const [stars, lines] = await Promise.all([
+                    d3.json("https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/stars.6.json"),
+                    d3.json("https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/constellations.lines.json")
+                ]);
+                const projection = d3.geoEquirectangular().scale(size / (2 * Math.PI)).translate([size / 2, size / 4]);
+                const path = d3.geoPath(projection, ctx);
+                ctx.fillStyle = "#020208"; ctx.fillRect(0, 0, size, size / 2);
+                ctx.beginPath(); ctx.strokeStyle = "rgba(100, 150, 255, 0.3)";
+                lines.features.forEach(d => path(d)); ctx.stroke();
+                stars.features.forEach(d => {
+                    const [x, y] = projection(d.geometry.coordinates);
+                    const radius = Math.max(0.2, 1.5 - d.properties.mag * 0.2);
+                    ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.fillStyle = "white"; ctx.fill();
+                });
+                const starSphereGeo = new THREE.SphereGeometry(2000, 60, 40);
+                const starSphereMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), side: THREE.BackSide, transparent: true, opacity: 0.8 });
+                scene.add(new THREE.Mesh(starSphereGeo, starSphereMat));
+            } catch (e) {
+                console.error("Không thể tải bản đồ sao:", e);
+            }
+        }
+
+        function toggleNavMenu() {
+            const menu = document.getElementById('navMenu');
+            if (menu) {
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            }
+        }
+
+        function navigateTo(url) {
+            window.location.href = url;
+        }
+
+        function focusOnObject(obj) {
+            if (!focusedObject) {
+                savedCameraState = {
+                    distance: cameraDistance,
+                    rotX,
+                    rotY
+                };
+            }
+
+            focusedObject = obj;
+
+            obj.getWorldPosition(targetLookAt);
+
+            targetDistance = obj === sun ? 28 : 12;
+
+            document.getElementById("infoPanel").style.display = "block";
+            showDefaultInfo();
+        }
+
+        function onMouseClick(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            const objects = [sun, earth, moon];
+            const intersects = raycaster.intersectObjects(objects, true);
+            if (!intersects.length) return;
+
+            let obj = intersects[0].object;
+            while (obj && !obj.userData.name) obj = obj.parent;
+            if (!obj) return;
+
+            focusOnObject(obj);
+        }
+
+        function showDefaultInfo() {
+            const name = focusedObject.userData.name;
+            document.getElementById("infoContent").textContent =
+                planetDescriptions[name] || "Không có dữ liệu.";
+        }
+
+        function showStats() {
+            if (focusedObject.userData.name === "Mặt Trăng") {
+                document.getElementById("infoContent").innerHTML = `
+                        <b>Chu kỳ quay quanh Trái Đất:</b> 27.3 ngày<br>
+                        <b>Khoảng cách trung bình:</b> 384,400 km<br>
+                        <b>Đường kính:</b> 3,474 km<br>
+                        <b>Khối lượng:</b> 7.35 × 10²² kg<br>
+                        <b>Nhiệt độ bề mặt:</b> -173°C đến 127°C<br>
+                        <b>Độ nghiêng quỹ đạo:</b> 5.14° so với mặt phẳng hoàng đạo
+                    `;
+            } else if (focusedObject.userData.name === "Trái Đất") {
+                document.getElementById("infoContent").innerHTML = `
+                        <b>Chu kỳ quay quanh Mặt Trời:</b> 365.26 ngày<br>
+                        <b>Khoảng cách đến Mặt Trời:</b> 149.6 triệu km<br>
+                        <b>Đường kính:</b> 12,742 km<br>
+                        <b>Khối lượng:</b> 5.97 × 10²⁴ kg<br>
+                        <b>Nhiệt độ bề mặt:</b> -88°C đến 58°C<br>
+                        <b>Độ nghiêng trục:</b> 23.44°
+                    `;
+            } else if (focusedObject.userData.name === "Mặt Trời") {
+                document.getElementById("infoContent").innerHTML = `
+                        <b>Loại sao:</b> Sao lùn vàng (G2V)<br>
+                        <b>Đường kính:</b> 1,391,000 km<br>
+                        <b>Khối lượng:</b> 1.989 × 10³⁰ kg<br>
+                        <b>Nhiệt độ bề mặt:</b> 5,500°C<br>
+                        <b>Nhiệt độ lõi:</b> 15 triệu °C
+                    `;
+            }
+        }
+
+        function exitFocus() {
+            focusedObject = null;
+            document.getElementById("infoPanel").style.display = "none";
+            targetDistance = CAMERA_START;
+            targetLookAt.set(0, 0, 0);
+        }
+
+        function updateCamera() {
+            currentLookAt.lerp(targetLookAt, 0.08);
+
+            rotX += (targetRotX - rotX) * 0.08;
+            rotY += (targetRotY - rotY) * 0.08;
+
+            const distance = cameraDistance;
+
+            const x = currentLookAt.x + distance * Math.sin(rotY) * Math.cos(rotX);
+            const y = currentLookAt.y + distance * Math.sin(rotX);
+            const z = currentLookAt.z + distance * Math.cos(rotY) * Math.cos(rotX);
+
+            camera.position.set(x, y, z);
+            camera.lookAt(currentLookAt);
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 4000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            /*MẶT TRỜI*/
+            const light = new THREE.PointLight(0xffffff, 3, 3000, 1);
+            light.position.set(0, 0, 0);
+            scene.add(light);
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+
+            sun = new THREE.Mesh(new THREE.SphereGeometry(3, 32, 32), new THREE.MeshBasicMaterial({ color: 0xfdb813 }));
+            scene.add(sun);
+            sun.userData.name = "Mặt Trời";
+
+            /*QUỸ ĐẠO TRÁI ĐẤT*/
+            const earthOrbitRadius = AU;
+            const earthOrbitPoints = [];
+            for (let i = 0; i <= 128; i++) {
+                const t = (i / 128) * Math.PI * 2;
+                earthOrbitPoints.push(earthOrbitRadius * Math.cos(t), 0, earthOrbitRadius * Math.sin(t));
+            }
+            const earthOrbitGeometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(earthOrbitPoints, 3));
+            const earthOrbitMaterial = new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: 0.6 });
+            const earthOrbit = new THREE.Line(earthOrbitGeometry, earthOrbitMaterial);
+            scene.add(earthOrbit);
+
+            /*TRÁI ĐẤT*/
+            earth = new THREE.Mesh(new THREE.SphereGeometry(1.0, 32, 32), new THREE.MeshStandardMaterial({ color: 0x4a90e2 }));
+            earth.userData.name = "Trái Đất";
+            const earthLabel = createLabel("Trái Đất");
+            earthLabel.position.y = 1.8;
+            earth.add(earthLabel);
+            scene.add(earth);
+
+            /*QUỸ ĐẠO MẶT TRĂNG – NGHIÊNG 5.14°*/
+            const moonOrbitCurve = new THREE.EllipseCurve(
+                0, 0,            // Tâm
+                moonOrbitRadius, moonOrbitRadius, // Bán kính
+                0, 2 * Math.PI,  // Góc
+                false, 0         // Quay ngược, góc xoay ban đầu
+            );
+
+            const moonPoints = moonOrbitCurve.getPoints(128);
+            const moonOrbitGeo = new THREE.BufferGeometry().setFromPoints(
+                // Chuyển đổi từ hệ tọa độ 2D (x,y) của Ellipse sang 3D (x,0,z)
+                moonPoints.map(p => new THREE.Vector3(p.x, 0, p.y))
+            );
+
+            moonOrbit = new THREE.Line(
+                moonOrbitGeo,
+                new THREE.LineBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.5 })
+            );
+
+            // QUAN TRỌNG: Nghiêng vòng tròn này đúng bằng góc nghiêng của Mặt Trăng
+            moonOrbit.rotation.x = MOON_INCLINATION;
+
+            scene.add(moonOrbit);
+
+            /*MẶT TRĂNG - THÊM VÀO EARTH NHƯ TRONG CODE GỐC*/
+            moon = new THREE.Mesh(new THREE.SphereGeometry(0.27, 32, 32), new THREE.MeshStandardMaterial({ color: 0xaaaaaa }));
+            moon.userData.name = "Mặt Trăng";
+            const moonLabel = createLabel("Mặt Trăng", 96);
+            moonLabel.position.y = 0.5;
+            moon.add(moonLabel);
+            scene.add(moon); 
+
+            function setInitialInputValues() {
+                const now = new Date();
+                const pad = (n) => String(n).padStart(2, '0');
+
+                const dateString = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+                const timeString = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+                document.getElementById('dateInput').value = dateString;
+                document.getElementById('timeInput').value = timeString;
+            }
+            setInitialInputValues();
+
+            const speedSlider = document.getElementById('speedSlider');
+            if (speedSlider) {
+                speedSlider.addEventListener('input', onSpeedChange);
+                onSpeedChange();
+            }
+
+            const dateInput = document.getElementById('dateInput');
+            const timeInput = document.getElementById('timeInput');
+            if (dateInput) dateInput.addEventListener('change', onDateTimeChange);
+            if (timeInput) timeInput.addEventListener('change', onDateTimeChange);
+
+            createStarfieldBackground(scene);
+            updateCamera();
+            initialCameraState = {
+                distance: CAMERA_START,
+                rotX,
+                rotY
+            };
+            updatePlanetPositions();
+            updateSimTime();
+            animate();
+
+            /* Gắn sự kiện */
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            document.addEventListener('mousedown', e => { dragging = true; prevX = e.clientX; prevY = e.clientY; });
+            document.addEventListener('mouseup', () => dragging = false);
+            document.addEventListener('mousemove', e => {
+                if (!dragging) return;
+                rotY += (e.clientX - prevX) * 0.005;
+                rotX += (e.clientY - prevY) * 0.005;
+                targetRotX = rotX;
+                targetRotY = rotY;
+                rotX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotX));
+                prevX = e.clientX; prevY = e.clientY;
+                updateCamera();
+            });
+            document.addEventListener('wheel', e => {
+                e.preventDefault();
+                targetDistance = THREE.MathUtils.clamp(
+                    targetDistance + e.deltaY * 0.03,
+                    focusedObject ? 6 : 40,
+                    focusedObject ? 80 : 500
+                );
+                updateCamera();
+            }, { passive: false });
+
+            renderer.domElement.addEventListener('click', onMouseClick);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const currentTime = Date.now();
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+
+            cameraDistance += (targetDistance - cameraDistance) * 0.08;
+
+            if (isRunning && speedMultiplier > 0) {
+                // Tính thời gian thực tế trôi qua dựa trên tốc độ mô phỏng
+                const realTimePassed = deltaTime * speedMultiplier * 3600 * 1000;
+                simDate = new Date(simDate.getTime() + realTimePassed);
+                updatePlanetPositions();
+                updateSimTime();
+            }
+
+            // Tự quay của các thiên thể
+            sun.rotation.y += 0.004 * (speedMultiplier / 10);
+            earth.rotation.y += 0.01 * (speedMultiplier / 10);
+
+            if (eclipseMode === 'tide') {
+                earth.scale.y = 1 + 0.03 * tideStrength;
+            }
+
+            renderer.render(scene, camera);
+            updateCamera();
+        }
+
+        let currentPages = {
+            guidePage: 1,
+            eduPage: 1,
+            quizPage: 1
+        };
+
+        let quizAnswers = {
+            1: null,
+            2: null,
+            3: null,
+            4: null
+        };
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                openModal('guideModal');
+            }, 500);
+        });
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function selectAnswer(pageNum, answer) {
+            const options = document.querySelectorAll(`#quizPage${pageNum} .quiz-option`);
+            options.forEach(opt => opt.classList.remove('selected'));
+
+            event.target.classList.add('selected');
+            quizAnswers[pageNum] = answer;
+
+            document.getElementById(`submitBtn${pageNum}`).disabled = false;
+        }
+
+        function checkAnswer(pageNum, correctAnswer) {
+            const userAnswer = quizAnswers[pageNum];
+            const resultDiv = document.getElementById(`result${pageNum}`);
+            const options = document.querySelectorAll(`#quizPage${pageNum} .quiz-option`);
+
+            if (!userAnswer) {
+                resultDiv.textContent = 'Vui lòng chọn một đáp án!';
+                resultDiv.className = 'quiz-result show wrong';
+                return;
+            }
+
+            options.forEach(opt => {
+                opt.style.pointerEvents = 'none';
+                if (opt.textContent.startsWith(correctAnswer)) {
+                    opt.classList.add('correct');
+                } else if (opt.classList.contains('selected')) {
+                    opt.classList.add('wrong');
+                }
+            });
+
+            if (userAnswer === correctAnswer) {
+                resultDiv.textContent = '✓ Chính xác!';
+                resultDiv.className = 'quiz-result show correct';
+            } else {
+                resultDiv.textContent = '✗ Sai rồi! Đáp án đúng là: ' + correctAnswer;
+                resultDiv.className = 'quiz-result show wrong';
+            }
+
+            document.getElementById(`submitBtn${pageNum}`).disabled = true;
+        }
+
+        function resetQuiz(pageNum) {
+            quizAnswers[pageNum] = null;
+            const options = document.querySelectorAll(`#quizPage${pageNum} .quiz-option`);
+            options.forEach(opt => {
+                opt.classList.remove('selected', 'correct', 'wrong');
+                opt.style.pointerEvents = 'auto';
+            });
+            document.getElementById(`result${pageNum}`).className = 'quiz-result';
+            document.getElementById(`submitBtn${pageNum}`).disabled = false;
+        }
+
+        function changePage(prefix, direction) {
+            let totalPages;
+            if (prefix === 'guidePage') totalPages = 2;
+            else if (prefix === 'eduPage') totalPages = 3;
+            else if (prefix === 'quizPage') totalPages = 4;
+
+            let currentPage = currentPages[prefix];
+
+            document.getElementById(`${prefix}${currentPage}`).classList.remove('active');
+
+            currentPage += direction;
+            if (currentPage > totalPages) currentPage = 1;
+            if (currentPage < 1) currentPage = totalPages;
+
+            currentPages[prefix] = currentPage;
+            document.getElementById(`${prefix}${currentPage}`).classList.add('active');
+
+            const numId = prefix === 'guidePage' ? 'guideNum' : (prefix === 'eduPage' ? 'eduNum' : 'quizNum');
+            document.getElementById(numId).textContent = currentPage;
+
+            if (prefix === 'quizPage') {
+                resetQuiz(currentPage);
+            }
+        }
+
+        window.onclick = function (event) {
+            if (event.target.className === 'modal-overlay') {
+                event.target.style.display = 'none';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
