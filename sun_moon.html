@@ -1,0 +1,2261 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MẶT TRỜI VÀ MẶT TRĂNG</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+            font-family: Arial, sans-serif;
+        }
+
+
+            body::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-image: radial-gradient(1px 1px at 25% 30%, rgba(255, 255, 255, 0.7), transparent), radial-gradient(1px 1px at 50% 12%, rgba(255, 255, 255, 0.6), transparent), radial-gradient(1px 1px at 80% 50%, rgba(255, 255, 255, 0.7), transparent);
+                z-index: -1;
+            }
+
+        h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: #4a90e2;
+        }
+
+        #canvas3d {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #controlPanel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90vw;
+            max-width: 1200px;
+            height: 85vh;
+            background: rgb(6, 44, 114, 0.5);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2.5rem;
+            z-index: 1000;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+
+            #controlPanel.minimized {
+                width: 60px;
+                height: 60px;
+                top: 20px;
+                right: 20px;
+                left: auto;
+                transform: none;
+                padding: 0;
+                background: #4a90e2;
+                cursor: pointer;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            }
+
+                #controlPanel.minimized .panel-content {
+                    display: none;
+                }
+
+                #controlPanel.minimized::after {
+                    content: '⚙️';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 28px;
+                }
+
+        .panel-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+            .panel-header h1 {
+                font-size: 2.5rem;
+                background: linear-gradient(120deg, #e8eaf0, #a78bff);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                margin-bottom: 0.5rem;
+            }
+
+            .panel-header p {
+                color: white;
+                font-size: 1.1rem;
+            }
+
+        #locationPicker {
+            width: 100%;
+            height: 350px;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .control-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+            .form-group label {
+                font-weight: 600;
+                margin-bottom: 0.5rem;
+                color: #e8eaf0;
+                font-size: 0.95rem;
+            }
+
+            .form-group input {
+                padding: 0.8rem;
+                background: rgba(25, 30, 45, 0.8);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                color: var(--text);
+                font-size: 1rem;
+            }
+
+                .form-group input:focus {
+                    outline: none;
+                    border-color: #4a90e2;
+                    box-shadow: 0 0 0 2px rgba(131, 103, 223, 0.2);
+                }
+
+        .create-btn {
+            background: linear-gradient(135deg, #4a90e2, #6b52c7);
+            color: white;
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(131, 103, 223, 0.3);
+            height: fit-content;
+        }
+
+            .create-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(131, 103, 223, 0.4);
+            }
+
+        .coordinates-display {
+            text-align: center;
+            padding: 0.8rem;
+            background: rgba(25, 30, 45, 0.8);
+            border-radius: 8px;
+            color: #a0a8c0;
+            margin-bottom: 1rem;
+        }
+
+        .leaflet-container {
+            background: rgba(25, 30, 45, 0.8);
+        }
+
+        #timeControls {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.85);
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 320px;
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+            #timeControls.active {
+                display: block;
+            }
+
+            #timeControls h3 {
+                margin: 0 0 10px 0;
+                font-size: 16px;
+                color: #4a90e2;
+            }
+
+            #timeControls .control-group {
+                margin-bottom: 12px;
+                display: block;
+            }
+
+            #timeControls label {
+                display: block;
+                margin-bottom: 5px;
+                font-size: 12px;
+                color: #aaa;
+            }
+
+            #timeControls input[type="range"] {
+                width: 100%;
+                margin: 5px 0;
+            }
+
+            #timeControls input[type="date"],
+            #timeControls input[type="time"] {
+                width: 100%;
+                padding: 6px;
+                background: rgba(255,255,255,0.1);
+                border: 1px solid rgba(255,255,255,0.2);
+                border-radius: 4px;
+                color: white;
+                font-size: 13px;
+            }
+
+        .value-display {
+            font-size: 12px;
+            color: #4a90e2;
+            margin-top: 3px;
+            font-weight: bold;
+        }
+
+        .time-display {
+            background: rgba(74, 144, 226, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 13px;
+            border: 1px solid rgba(74, 144, 226, 0.3);
+        }
+
+        button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 5px;
+            margin-top: 8px;
+        }
+
+            button:hover {
+                background: #357abd;
+            }
+
+        .info-badge {
+            position: fixed;
+            top: 150px;
+            transform: translateY(35%);
+            right: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 320px;
+            backdrop-filter: blur(10px);
+            z-index: 999;
+            display: none;
+        }
+
+            .info-badge.active {
+                display: block;
+            }
+
+            .info-badge h3 {
+                margin: 0 0 10px 0;
+                font-size: 16px;
+                color: #4a90e2;
+            }
+
+            .info-badge p {
+                margin: 5px 0;
+                font-size: 12px;
+                color: white;
+            }
+
+            .info-badge strong {
+                color: #4a90e2;
+            }
+
+        .sun-moon-info {
+            background: rgba(30, 50, 80, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            border: 1px solid rgba(74, 144, 226, 0.3);
+        }
+
+        .celestial-object {
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .object-name {
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 4px;
+        }
+
+            .object-name.moon {
+                color: #c0c0ff;
+            }
+
+        .leaflet-container {
+            background: var(--surface-light);
+        }
+
+        #timeControls {
+            display: none;
+        }
+
+        #eduBtn {
+            position: fixed;
+            top: 20px;
+            right: 180px;
+            width: 55px;
+            height: 55px;
+            background: #4a90e2;
+            color: black;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4);
+            transition: transform 0.2s;
+        }
+
+            #eduBtn:hover {
+                transform: scale(1.1);
+            }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 30px rgba(74, 144, 226, 0.3);
+        }
+
+        .modal-content {
+            background: rgba(20, 20, 30, 0.95);
+            border: 1px solid #4a90e2;
+            padding: 20px;
+            padding-bottom: 70px;
+            border-radius: 15px;
+            width: 500px;
+            height: 380px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            color: white;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(74, 144, 226, 0.3);
+            overflow: hidden; 
+        }
+
+        .edu-theme {
+            border-color: #4a90e2;
+            box-shadow: 0 0 30px rgba(74, 144, 226, 0.3);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #aaa;
+            z-index: 10;
+            line-height: 1;
+            padding: 5px;
+        }
+
+            .close-btn:hover {
+                color: white;
+            }
+
+        .modal-page {
+            display: none;
+            /* Chiếm toàn bộ chiều cao khả dụng trừ phần footer */
+            height: 100%;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+            .modal-page.active {
+                display: flex;
+                flex-direction: column;
+                /* Căn giữa theo chiều dọc */
+                justify-content: center;
+                /* Căn giữa theo chiều ngang */
+                align-items: center;
+                animation: fadeIn 0.3s;
+            }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: rgba(20, 20, 30, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 0;
+        }
+
+        .modal-content .modal-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .nav-arrow {
+            background: #333;
+            border: none;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+            .nav-arrow:hover {
+                background: #4a90e2;
+                transform: scale(1.05);
+            }
+
+        .page-indicator {
+            font-size: 14px;
+            color: #888;
+            font-weight: 500;
+        }
+
+        .large-modal {
+            width: 500px;
+            height: 380px;
+        }
+
+        .modal-page > p {
+            text-align: center;
+            line-height: 1.6;
+            margin: 0; 
+            max-width: 95%;
+        }
+
+        .modal-page > h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #4a90e2;
+        }
+
+        .img-col {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .img-col img {
+            max-width: 100%;
+            height: auto;
+            max-height: 180px;
+            border-radius: 8px;
+            border: 1px solid rgba(241, 196, 15, 0.3);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+
+        #quizBtn {
+            position: fixed;
+            top: 20px;
+            right: 250px;
+            width: 55px;
+            height: 55px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+            transition: transform 0.2s;
+        }
+
+            #quizBtn:hover {
+                transform: scale(1.1);
+            }
+
+        .quiz-theme {
+            border-color: #27ae60;
+            box-shadow: 0 0 30px rgba(39, 174, 96, 0.3);
+        }
+
+        .quiz-question {
+            font-size: 18px;
+            font-weight: bold;
+            color: #27ae60;
+            margin-bottom: 20px;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .quiz-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            color: white;
+            font-size: 15px;
+        }
+
+            .quiz-option:hover {
+                background: rgba(39, 174, 96, 0.2);
+                border-color: #27ae60;
+            }
+
+            .quiz-option.selected {
+                background: rgba(39, 174, 96, 0.3);
+                border-color: #27ae60;
+            }
+
+            .quiz-option.correct {
+                background: rgba(39, 174, 96, 0.5);
+                border-color: #27ae60;
+            }
+
+            .quiz-option.wrong {
+                background: rgba(231, 76, 60, 0.5);
+                border-color: #e74c3c;
+            }
+
+        .quiz-result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: none;
+        }
+
+            .quiz-result.show {
+                display: block;
+            }
+
+            .quiz-result.correct {
+                background: rgba(39, 174, 96, 0.3);
+                color: #27ae60;
+            }
+
+            .quiz-result.wrong {
+                background: rgba(231, 76, 60, 0.3);
+                color: #e74c3c;
+            }
+
+        .quiz-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 15px;
+            transition: all 0.2s;
+        }
+
+            .quiz-btn:hover {
+                background: #229954;
+            }
+
+            .quiz-btn:disabled {
+                background: #7f8c8d;
+                cursor: not-allowed;
+            }
+
+        #seeBtn {
+            position: fixed;
+            top: 20px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.3), rgba(74, 144, 226, 0.5));
+            border: 2px solid rgba(74, 144, 226, 0.6);
+            color: white;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #seeBtn {
+            right: 100px;
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.3), rgba(231, 76, 60, 0.5));
+            border-color: rgba(231, 76, 60, 0.6);
+        }
+
+        #sunPathBtn {
+            position: fixed;
+            top: 20px;
+            right: 240px; 
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, rgba(255, 200, 0, 0.3), rgba(255, 150, 0, 0.6));
+            border: 2px solid rgba(255, 200, 0, 0.7);
+            color: white;
+            border-radius: 50%;
+            font-size: 22px;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(255, 180, 0, 0.5);
+            backdrop-filter: blur(8px);
+            transition: all 0.3s;
+        }
+
+            #sunPathBtn:hover {
+                transform: scale(1.1);
+            }
+
+            #sunPathBtn.active {
+                background: linear-gradient(135deg, #ffd700, #ff9800);
+                box-shadow: 0 0 25px rgba(255, 200, 0, 0.9);
+            }
+
+        #homeBtn {
+            position: fixed;
+            top: 20px;
+            right: 170px; /* điều chỉnh nếu cần */
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, rgba(241, 196, 15, 0.35), rgba(241, 196, 15, 0.55));
+            border: 2px solid rgba(241, 196, 15, 0.65);
+            color: white;
+            font-size: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 18px rgba(241, 196, 15, 0.45);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            #homeBtn:hover {
+                transform: scale(1.12) rotate(10deg);
+                box-shadow: 0 8px 25px rgba(241, 196, 15, 0.6);
+            }
+
+        /* Overlay menu (nền mờ nhẹ) */
+        .home-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(4px);
+            z-index: 99;
+            display: none;
+            justify-content: flex-end;
+            align-items: flex-start;
+            padding: 90px 25px 0 0;
+        }
+
+        /* Khung menu chính */
+        .home-menu-content {
+            width: 300px;
+            background: rgba(15, 15, 35, 0.96);
+            border: 1px solid rgba(74, 144, 226, 0.5);
+            border-radius: 16px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(74, 144, 226, 0.2) inset;
+            backdrop-filter: blur(12px);
+            overflow: hidden;
+            animation: menuSlideIn 0.3s ease-out;
+        }
+
+        /* Header (tiêu đề + nút đóng) */
+        .home-menu-header {
+            position: relative;
+            padding: 18px 20px 14px;
+            text-align: center;
+            border-bottom: 1px solid rgba(74, 144, 226, 0.3);
+        }
+
+            .home-menu-header h3 {
+                margin: 0;
+                font-size: 1.4rem;
+                color: #4a90e2;
+                font-weight: 600;
+            }
+
+            .home-menu-header small {
+                display: block;
+                margin-top: 4px;
+                font-size: 0.82rem;
+                color: #aaa;
+            }
+
+        /* Nút đóng dạng dấu × */
+        .close-home-btn {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            font-size: 32px;
+            font-weight: 300;
+            color: #888;
+            cursor: pointer;
+            line-height: 1;
+            transition: all 0.2s;
+        }
+
+            .close-home-btn:hover {
+                color: #fff;
+                transform: scale(1.15);
+            }
+
+        .menu-item {
+            display: block;
+            width: 100%;
+            padding: 16px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            color: #eee;
+            font-size: 1.05rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+            .menu-item:last-child {
+                border-bottom: none;
+            }
+
+            .menu-item:hover {
+                background: rgba(74, 144, 226, 0.18);
+                color: white;
+                padding-left: 32px;
+            }
+
+        @keyframes menuSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .topic-btn {
+            display: block;
+            width: 80%;
+            margin: 25px auto;
+            padding: 18px;
+            background: rgba(255,255,255,0.07);
+            border: 2px solid #27ae60;
+            border-radius: 12px;
+            color: white;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+            .topic-btn:hover {
+                background: rgba(39,174,96,0.35);
+                transform: translateY(-2px);
+            }
+
+        #quizContainer .quiz-question {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin: 0 0 18px 0;
+            line-height: 1.4;
+            color: #27ae60;
+        }
+
+        #quizContainer .quiz-options {
+            gap: 10px;
+        }
+
+        #quizContainer .quiz-option {
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            border-radius: 8px;
+        }
+
+        .quiz-btn.check-btn {
+            padding: 10px 30px;
+            font-size: 0.95rem;
+            margin: 15px 0 20px 0;
+        }
+
+        .explanation {
+            margin-top: 15px;
+            padding: 14px 16px;
+            background: rgba(74,144,226,0.08);
+            border-left: 4px solid #4a90e2;
+            border-radius: 6px;
+            font-size: 0.94rem;
+            line-height: 1.55;
+            color: #e0f7fa;
+        }
+
+        .quiz-result-global {
+            margin: 12px 0;
+            padding: 10px;
+            font-size: 1rem;
+        }
+
+        .modal-footer {
+            position: sticky;
+            bottom: 0;
+            background: rgba(20, 20, 30, 0.98);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 5;
+        }
+
+            .modal-footer .nav-arrow {
+                padding: 8px 14px;
+                font-size: 1.1rem;
+            }
+
+            .modal-footer .page-indicator {
+                font-size: 0.9rem;
+                color: #aaa;
+            }
+    </style>
+</head>
+<body>
+    <div id="canvas3d"></div>
+
+    <div id="controlPanel">
+        <div class="panel-content" onclick="event.stopPropagation();">
+            <div class="panel-header">
+                <div onclick="closePanel();" style="position: absolute; right: 25px; top: 25px; cursor: pointer; font-size: 20px; color: var(--text-secondary);">✖</div>
+                <h1>Mô phỏng Mặt Trời & Mặt Trăng 3D</h1>
+                <p>Chọn vị trí và thời gian để quan sát</p>
+            </div>
+
+            <div id="locationPicker"></div>
+
+            <div class="coordinates-display" id="selectedLocation">
+                Nhấp vào bản đồ để chọn vị trí
+            </div>
+
+            <div class="control-group">
+                <div class="form-group">
+                    <label for="dateInput">Ngày quan sát</label>
+                    <input type="date" id="dateInput">
+                </div>
+                <div class="form-group">
+                    <label for="timeInput">Giờ quan sát</label>
+                    <input type="time" id="timeInput">
+                </div>
+                <button class="create-btn" onclick="createSimulation()">Bắt đầu</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="timeControls">
+        <h3>Điều Khiển</h3>
+
+        <div class="control-group">
+            <label>Chọn Ngày:</label>
+            <input type="date" id="dateInput2">
+        </div>
+
+        <div class="control-group">
+            <label>Chọn Giờ:</label>
+            <input type="time" id="timeInput2">
+        </div>
+
+        <div class="speed-control">
+            <label>Tốc Độ Mô Phỏng:</label>
+            <input type="range" id="speedSlider" min="0" max="200" value="0" step="20">
+            <div class="value-display" id="speedValue">1 giây = 0 phút</div>
+        </div>
+
+        <div class="time-display">
+            <strong>Thời Gian Mô Phỏng:</strong><br>
+            <div class="time" id="simTime">--/--/---- --:--:--</div>
+        </div>
+
+        <div class="button-group">
+            <button class="control-btn pause" onclick="pauseSimulation()">Tạm Dừng/Chạy</button>
+            <button class="control-btn" onclick="returnToPresent()">Về Hiện Tại</button>
+        </div>
+    </div>
+
+    <div id="eclipseControls" class="eclipse-controls">
+        <button class="eclipse-btn" onclick="findNextEclipse('solar')">Tìm Nhật Thực</button>
+        <button class="eclipse-btn" onclick="findNextEclipse('lunar')">Tìm Nguyệt Thực</button>
+    </div>
+
+    <div id="infoBadge" class="info-badge">
+        <h3>Thông tin quan sát</h3>
+        <p><strong>Vĩ độ:</strong> <span id="infoLat">--</span></p>
+        <p><strong>Kinh độ:</strong> <span id="infoLon">--</span></p>
+
+        <div class="sun-moon-info">
+            <div class="celestial-object">
+                <div class="object-name">Mặt Trời</div>
+                <p><strong>Độ cao:</strong> <span id="sunAlt">--</span>°</p>
+                <p><strong>Phương vị:</strong> <span id="sunAz">--</span>°</p>
+                <p><strong>Mọc:</strong> <span id="sunRise">--:--</span></p>
+                <p><strong>Lặn:</strong> <span id="sunSet">--:--</span></p>
+            </div>
+
+            <div class="celestial-object">
+                <div class="object-name moon">Mặt Trăng</div>
+                <p><strong>Độ cao:</strong> <span id="moonAlt">--</span>°</p>
+                <p><strong>Phương vị:</strong> <span id="moonAz">--</span>°</p>
+                <p><strong>Pha:</strong> <span id="moonPhase">--</span>%</p>
+                <p><strong>Mọc:</strong> <span id="moonRise">--:--</span></p>
+                <p><strong>Lặn:</strong> <span id="moonSet">--:--</span></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="menu-btn"></div>
+
+    <button id="homeBtn" title="Menu Kiến thức & Câu hỏi">
+        ⌂
+    </button>
+
+    <div id="homeMenu" class="home-menu-overlay">
+        <div class="home-menu-content">
+            <div class="home-menu-header">
+                <h3>Hệ Mặt Trời</h3>
+                <span class="close-home-btn" onclick="closeHomeMenu()">×</span>
+            </div>
+
+            <button class="menu-item" onclick="openModal('eduModal'); closeHomeMenu();">
+                Kiến thức
+            </button>
+
+            <button class="menu-item" onclick="openModal('topicModal'); closeHomeMenu();">
+                Câu hỏi
+            </button>
+
+        </div>
+    </div>
+
+    <button id="seeBtn" onclick="navigateTo('solar_system.html')">☉</button>
+    <div id="guideModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('guideModal')">&times;</span>
+            <div id="guidePage1" class="modal-page active">
+                <h3>Hướng Dẫn Điều Khiển</h3>
+                <p><b>Xoay:</b> Nhấn giữ chuột trái và kéo.</p>
+                <p><b>Phóng to/nhỏ:</b> Sử dụng con lăn chuột.</p>
+                <p><b>Xem thông tin:</b> Click trực tiếp vào một hành tinh.</p>
+            </div>
+            <div id="guidePage2" class="modal-page">
+                <h3>Chức Năng Hệ Thống</h3>
+                <p><b>Vị trí:</b> Bạn có thể chọn vị trí bất kì trên bản đồ để xem mặt trăng và mặt trời.</p>
+                <p><b>Thời gian:</b> Bạn có thể chọn ngày/giờ bất kỳ để xem vị trí mặt trời và mặt trăng trong quá khứ hoặc tương lai.</p>
+            </div>
+            <div id="guidePage3" class="modal-page">
+                <h3>Chức Năng Hệ Thống</h3>
+                <p><b>Tốc độ:</b> Điều chỉnh thanh trượt để tăng tốc mô phỏng.</p>
+                <p><b>Tạm dừng/Tiếp tục:</b> Ấn nút tạm dừng/tiếp tục để cho bầu trời dừng hoặc chạy tiếp.</p>
+                <p><b>Trở về:</b> Ấn nút về hiện tại để trở về thời của hiện tại</p>
+            </div>
+            <div class="modal-footer">
+                <button class="nav-arrow" onclick="changePage('guidePage', -1)">❮</button>
+                <span class="page-indicator">Phần <span id="guideNum">1</span>/3</span>
+                <button class="nav-arrow" onclick="changePage('guidePage', 1)">❯</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="eduModal" class="modal-overlay">
+        <div class="modal-content edu-theme">
+            <span class="close-btn" onclick="closeModal('eduModal')">&times;</span>
+
+            <div id="eduPage1" class="modal-page active">
+                <h3>Chuyển động của Mặt Trời</h3>
+                <p>Mặt Trời mọc ở hướng <b>Đông</b> và lặn ở hướng <b>Tây</b> theo một cung tròn. Điểm cao nhất của Mặt Trời là vào lúc giữa trưa, nằm trên trục Bắc - Nam của Trái Đất.</p>
+            </div>
+
+            <div id="eduPage2" class="modal-page">
+                <h3>Mặt Trời & Các Mùa</h3>
+                <p>Đường đi của Mặt Trời thay đổi theo từng mùa trong năm. Vào mùa hạ, Mặt Trời ở vị trí cao nhất trên hướng chính Nam, làm cho thời gian từ lúc mọc đến lúc lặn dài hơn.</p>
+                <div class="img-col">
+                    <img src="images/sun.png" alt="Đường đi Mặt Trời theo mùa">
+                </div>
+            </div>
+
+            <div id="eduPage3" class="modal-page">
+                <h3>Vệ tinh Mặt Trăng</h3>
+                <p>Mặt Trăng là vệ tinh tự nhiên duy nhất của Trái Đất. Nó không tự phát sáng mà phản xạ ánh sáng từ Mặt Trời. Trăng rằm tròn nhất vào ngày rằm, mọc khoảng 6h tối và lặn lúc 6h sáng.</p>
+            </div>
+
+            <div id="eduPage4" class="modal-page">
+                <h3>Chu kỳ quay</h3>
+                <p>Mặt Trăng xoay quanh Trái Đất mất 29,5 ngày. Vì chu kỳ tự quay quanh mình nó bằng đúng chu kỳ quay quanh Trái Đất, nên ta luôn chỉ nhìn thấy một mặt duy nhất của Mặt Trăng.</p>
+                <div class="img-col">
+                    <img src="images/moon.png" alt="Đường đi Mặt Trời theo mùa">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="nav-arrow" onclick="changePage('eduPage', -1)">❮</button>
+                <span class="page-indicator">Kiến thức <span id="eduNum">1</span>/4</span>
+                <button class="nav-arrow" onclick="changePage('eduPage', 1)">❯</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="topicModal" class="modal-overlay">
+        <div class="modal-content quiz-theme" style="width: 420px; height: 420px; padding: 40px 20px;">
+            <span class="close-btn" onclick="closeModal('topicModal')">×</span>
+            <h3 style="margin: 0 0 40px 0; color: #27ae60; font-size: 1.6rem;">Chọn chủ đề ôn tập</h3>
+
+            <button class="topic-btn" onclick="startQuiz('solar_system')">Hệ Mặt Trời</button>
+            <button class="topic-btn" onclick="startQuiz('sun_moon_motion')">Chuyển động Mặt Trời và Mặt Trăng</button>
+        </div>
+    </div>
+
+    <div id="quizModalNew" class="modal-overlay">
+        <div class="modal-content quiz-theme" style="width: 540px; height: 82vh; max-height: 760px; overflow-y: auto; padding: 20px;">
+            <span class="close-btn" onclick="closeModal('quizModalNew')">×</span>
+            <h3 id="quizTopicTitle" style="margin: 8px 0 25px 0; color: #27ae60; text-align: center; font-size: 1.4rem;"></h3>
+
+            <div id="quizContainer"></div>
+
+            <div class="modal-footer">
+                <button class="nav-arrow" onclick="changeQuizPage(-1)">❮</button>
+                <span class="page-indicator">Câu <span id="quizPageNum">1</span>/20</span>
+                <button class="nav-arrow" onclick="changeQuizPage(1)">❯</button>
+            </div>
+        </div>
+    </div>
+
+    <button id="sunPathBtn" onclick="toggleSunPaths()">☀</button>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simplex-noise@2.4.0/simplex-noise.js"></script>
+
+    <script>
+        let scene, camera, renderer;
+        let sun, moon, skyDome;
+        let locationMarker, locationMap;
+        let selectedCoords = null;
+        let simDate = new Date();
+        let isRunning = false;
+        let speedMultiplier = 0;
+        let lastTime = Date.now();
+        let cameraRotation = { x: 0, y: 0 };
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let originalStates = null;
+        let currentEclipse = null;
+
+        function formatTime(hours) {
+            if (hours === null) return '--:--';
+            const h = Math.floor(hours);
+            const m = Math.floor((hours - h) * 60);
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+
+        function init() {
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            document.getElementById('dateInput').value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+            document.getElementById('timeInput').value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            document.getElementById('controlPanel').addEventListener('click', togglePanel);
+
+            document.getElementById('menu-btn').addEventListener('click', function () {
+                const panel = document.getElementById('menu-panel');
+                panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+            });
+
+            document.addEventListener('click', function (e) {
+                const menuBtn = document.getElementById('menu-btn');
+                const menuPanel = document.getElementById('menu-panel');
+                if (!menuBtn.contains(e.target) && !menuPanel.contains(e.target)) {
+                    menuPanel.style.display = 'none';
+                }
+            });
+
+            initLocationPicker();
+            initThreeJS();
+        }
+
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+            camera.position.set(0, 2, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('canvas3d').appendChild(renderer.domElement);
+
+            createSkyDome();
+            createSun();
+            createMoon();
+            createGround();
+            createCompass();
+
+            const canvas = renderer.domElement;
+            canvas.addEventListener('mousedown', e => {
+                isDragging = true;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+            canvas.addEventListener('mousemove', e => {
+                if (!isDragging) return;
+                const deltaX = e.clientX - previousMousePosition.x;
+                const deltaY = e.clientY - previousMousePosition.y;
+                cameraRotation.y -= deltaX * 0.005;
+                cameraRotation.x -= deltaY * 0.005;
+                cameraRotation.x = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, cameraRotation.x));
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+                updateCameraLook();
+            });
+            window.addEventListener('mouseup', () => isDragging = false);
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            animate();
+        }
+
+        function createSkyDome() {
+            const geo = new THREE.SphereGeometry(2000, 32, 32);
+            const mat = new THREE.ShaderMaterial({
+                uniforms: {
+                    topColor: { value: new THREE.Color(0x0077ff) },
+                    bottomColor: { value: new THREE.Color(0xffffff) },
+                    offset: { value: 33 },
+                    exponent: { value: 0.6 }
+                },
+                vertexShader: `
+                                            varying vec3 vWorldPosition;
+                                            void main() {
+                                                vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                                                vWorldPosition = worldPosition.xyz;
+                                                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                                            }
+                                        `,
+                fragmentShader: `
+                                            uniform vec3 topColor;
+                                            uniform vec3 bottomColor;
+                                            uniform float offset;
+                                            uniform float exponent;
+                                            varying vec3 vWorldPosition;
+                                            void main() {
+                                                float h = normalize(vWorldPosition + offset).y;
+                                                gl_FragColor = vec4(mix(bottomColor, topColor, max(pow(max(h, 0.0), exponent), 0.0)), 1.0);
+                                            }
+                                        `,
+                side: THREE.BackSide
+            });
+            skyDome = new THREE.Mesh(geo, mat);
+            scene.add(skyDome);
+        }
+
+        function updateSkyColor() {
+            const sunY = sun.position.y;
+
+            // Nếu đang có nhật thực, bầu trời tối hơn
+            const darkenFactor = currentEclipse === 'solar' ? 0.3 : 1.0;
+
+            if (sunY > 50) {
+                skyDome.material.uniforms.topColor.value.setHex(0x0077ff).multiplyScalar(darkenFactor);
+                skyDome.material.uniforms.bottomColor.value.setHex(0x88ccff).multiplyScalar(darkenFactor);
+            } else if (sunY > 0) {
+                const t = sunY / 50;
+                const duskTop = new THREE.Color(0xff6600);
+                const dayTop = new THREE.Color(0x0077ff);
+                const topColor = new THREE.Color().lerpColors(duskTop, dayTop, t);
+                topColor.multiplyScalar(darkenFactor);
+                skyDome.material.uniforms.topColor.value.copy(topColor);
+
+                const duskBottom = new THREE.Color(0xffaa44);
+                const dayBottom = new THREE.Color(0x88ccff);
+                const bottomColor = new THREE.Color().lerpColors(duskBottom, dayBottom, t);
+                bottomColor.multiplyScalar(darkenFactor);
+                skyDome.material.uniforms.bottomColor.value.copy(bottomColor);
+            } else if (sunY > -50) {
+                const t = (sunY + 50) / 50;
+                const nightTop = new THREE.Color(0x000033);
+                const duskTop = new THREE.Color(0xff6600);
+                const topColor = new THREE.Color().lerpColors(nightTop, duskTop, t);
+                topColor.multiplyScalar(darkenFactor);
+                skyDome.material.uniforms.topColor.value.copy(topColor);
+
+                const nightBottom = new THREE.Color(0x001133);
+                const duskBottom = new THREE.Color(0xffaa44);
+                const bottomColor = new THREE.Color().lerpColors(nightBottom, duskBottom, t);
+                bottomColor.multiplyScalar(darkenFactor);
+                skyDome.material.uniforms.bottomColor.value.copy(bottomColor);
+            } else {
+                const nightTop = new THREE.Color(0x000033);
+                const nightBottom = new THREE.Color(0x001133);
+                nightTop.multiplyScalar(darkenFactor);
+                nightBottom.multiplyScalar(darkenFactor);
+                skyDome.material.uniforms.topColor.value.copy(nightTop);
+                skyDome.material.uniforms.bottomColor.value.copy(nightBottom);
+            }
+        }
+
+        function createSun() {
+            // Tạo mặt trời với kích thước hợp lý hơn
+            const geo = new THREE.SphereGeometry(5, 32, 32);
+            const mat = new THREE.MeshBasicMaterial({
+                color: 0xffff00,
+                emissive: 0xffff00,
+                emissiveIntensity: 0.5
+            });
+            sun = new THREE.Mesh(geo, mat);
+
+            // Tạo ánh sáng cho mặt trời
+            const light = new THREE.PointLight(0xffffff, 1.5, 1000);
+            sun.add(light);
+
+            // Tạo hiệu ứng glow bằng Sprite thay vì hình cầu lớn
+            const spriteMaterial = new THREE.SpriteMaterial({
+                map: createSunGlowCanvas(),
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending
+            });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.scale.set(20, 20, 1);
+            sun.add(sprite);
+
+            scene.add(sun);
+        }
+
+        function createSunGlowCanvas() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+            gradient.addColorStop(0, 'rgba(255, 255, 200, 1)');
+            gradient.addColorStop(0.1, 'rgba(255, 255, 100, 0.8)');
+            gradient.addColorStop(0.5, 'rgba(255, 200, 0, 0.5)');
+            gradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 256, 256);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            return texture;
+        }
+
+        function createMoon() {
+            const geo = new THREE.SphereGeometry(4.7, 64, 64);
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    sunDirection: { value: new THREE.Vector3() }, // Hướng từ Trăng đến Trời
+                },
+                vertexShader: `
+                        varying vec3 vNormal;
+                        void main() {
+                            // Lấy pháp tuyến trong không gian thế giới (World Space)
+                            vNormal = normalize(vec3(modelMatrix * vec4(normal, 0.0)));
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                        }
+                    `,
+                fragmentShader: `
+                        varying vec3 vNormal;
+                        uniform vec3 sunDirection;
+
+                        void main() {
+                            // Tính toán độ sáng dựa trên tích vô hướng của pháp tuyến và hướng mặt trời
+                            float dotNL = dot(vNormal, normalize(sunDirection));
+
+                            // Tạo độ sắc nét cho đường phân cách (Terminator)
+                            float intensity = smoothstep(-0.01, 0.01, dotNL);
+
+                            vec3 dark = vec3(0.03, 0.03, 0.05);  // Vùng tối
+                            vec3 bright = vec3(0.85, 0.85, 0.8); // Vùng sáng
+
+                            gl_FragColor = vec4(mix(dark, bright, intensity), 1.0);
+                        }
+                    `
+            });
+
+            moon = new THREE.Mesh(geo, material);
+            scene.add(moon);
+        }
+
+        function createGround() {
+            const groundGeo = new THREE.CircleGeometry(110, 32);
+            const groundMat = new THREE.MeshBasicMaterial({ color: 0x2d5016, side: THREE.DoubleSide });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = 0;
+            scene.add(ground);
+        }
+
+        function createCompass() {
+            directions = [
+                { text: 'N', x: 0, z: 200, color: '#ffffff' },
+                { text: 'B', x: 0, z: -200, color: '#ffffff' },
+                { text: 'Đ', x: 200, z: 0, color: '#ffffff' },
+                { text: 'T', x: -200, z: 0, color: '#ffffff' }
+            ];
+
+            directions.forEach(d => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 128;
+                canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = d.color;
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(d.text, 55, 55);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const spriteMat = new THREE.SpriteMaterial({ map: texture });
+                const sprite = new THREE.Sprite(spriteMat);
+                sprite.position.set(d.x, 20, d.z);
+                sprite.scale.set(40, 40, 1);
+                scene.add(sprite);
+            });
+        }
+
+        let sunPathLines = [];
+        let showSunPaths = false;
+
+        function createSeasonalSunPaths() {
+            sunPathLines.forEach(line => scene.remove(line));
+            sunPathLines = [];
+
+            if (!selectedCoords || !showSunPaths) return;
+
+            const seasons = [
+                { name: 'Đông chí', date: new Date(simDate.getFullYear(), 11, 21), color: 0x88ccff },
+                { name: 'Xuân/Thu phân', date: new Date(simDate.getFullYear(), 2, 20), color: 0x44ff88 },
+                { name: 'Hạ chí', date: new Date(simDate.getFullYear(), 5, 21), color: 0xff8844 }
+            ];
+
+            const dist = 180;
+
+            seasons.forEach(season => {
+                const points = [];
+
+                for (let hour = 0; hour < 24; hour += 0.25) {
+                    const testDate = new Date(season.date);
+                    testDate.setHours(Math.floor(hour), (hour % 1) * 60, 0);
+
+                    const sunPos = SunCalc.getPosition(testDate, selectedCoords.lat, selectedCoords.lon);
+
+                    if (sunPos.altitude > 0) {
+                        const x = -Math.sin(sunPos.azimuth) * Math.cos(sunPos.altitude) * dist;
+                        const y = Math.sin(sunPos.altitude) * dist;
+                        const z = Math.cos(sunPos.azimuth) * Math.cos(sunPos.altitude) * dist;
+                        points.push(new THREE.Vector3(x, y, z));
+                    }
+                }
+
+                if (points.length > 0) {
+                    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                    const material = new THREE.LineBasicMaterial({
+                        color: season.color,
+                        opacity: 0.6,
+                        transparent: true,
+                        linewidth: 2
+                    });
+                    const line = new THREE.Line(geometry, material);
+                    scene.add(line);
+                    sunPathLines.push(line);
+
+                    const midPoint = points[Math.floor(points.length / 2)];
+                    const labelCanvas = document.createElement('canvas');
+                    labelCanvas.width = 256;
+                    labelCanvas.height = 64;
+                    const ctx = labelCanvas.getContext('2d');
+                    ctx.fillStyle = '#' + season.color.toString(16).padStart(6, '0');
+                    ctx.font = 'bold 28px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(season.name, 128, 40);
+
+                    const texture = new THREE.CanvasTexture(labelCanvas);
+                    const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+                    const sprite = new THREE.Sprite(spriteMat);
+                    sprite.position.copy(midPoint);
+                    sprite.position.y += 20;
+                    sprite.scale.set(60, 15, 1);
+                    scene.add(sprite);
+                    sunPathLines.push(sprite);
+                }
+            });
+        }
+
+        function updateCameraLook() {
+            const phi = Math.PI / 2 - cameraRotation.x;
+            const theta = cameraRotation.y;
+            const x = Math.sin(phi) * Math.sin(theta);
+            const y = Math.cos(phi);
+            const z = Math.sin(phi) * Math.cos(theta);
+            camera.lookAt(camera.position.x + x, camera.position.y + y, camera.position.z + z);
+        }
+
+        function updateCelestialBodies() {
+            if (!selectedCoords) return;
+            const date = simDate;
+
+            const sunPos = SunCalc.getPosition(date, selectedCoords.lat, selectedCoords.lon);
+            const moonPos = SunCalc.getMoonPosition(date, selectedCoords.lat, selectedCoords.lon);
+            const moonIllum = SunCalc.getMoonIllumination(date);
+            const sunTimes = SunCalc.getTimes(date, selectedCoords.lat, selectedCoords.lon);
+            const moonTimes = SunCalc.getMoonTimes(date, selectedCoords.lat, selectedCoords.lon);
+
+            const dist = 180;
+            const sAz = sunPos.azimuth;
+            sun.position.set(
+                -Math.sin(sAz) * Math.cos(sunPos.altitude) * dist,  
+                Math.sin(sunPos.altitude) * dist,                   
+                Math.cos(sAz) * Math.cos(sunPos.altitude) * dist    
+            );
+
+            const mAz = moonPos.azimuth;
+            moon.position.set(
+                -Math.sin(mAz) * Math.cos(moonPos.altitude) * dist,
+                Math.sin(moonPos.altitude) * dist,
+                Math.cos(mAz) * Math.cos(moonPos.altitude) * dist
+            );
+
+            if (moon.material.uniforms && moon.material.uniforms.sunDirection) {
+                const dirToSun = new THREE.Vector3().subVectors(sun.position, moon.position).normalize();
+                moon.material.uniforms.sunDirection.value.copy(dirToSun);
+            }
+
+            const sunLight = sun.children.find(child => child instanceof THREE.PointLight);
+            if (sunLight) {
+                const intensity = Math.max(0, Math.sin(sunPos.altitude));
+                sunLight.intensity = intensity * 2.5;
+            }
+            updateSkyColor();
+
+            const toDeg = (rad) => (rad * 180 / Math.PI).toFixed(2);
+
+            const displaySunAz = toDeg(sunPos.azimuth);
+            const displayMoonAz = toDeg(moonPos.azimuth);
+
+            document.getElementById('sunAlt').textContent = toDeg(sunPos.altitude);
+            document.getElementById('sunAz').textContent = displaySunAz;
+            document.getElementById('moonAlt').textContent = toDeg(moonPos.altitude);
+            document.getElementById('moonAz').textContent = displayMoonAz;
+            document.getElementById('moonPhase').textContent = (moonIllum.fraction * 100).toFixed(1);
+
+            document.getElementById('sunRise').textContent = formatTimeFromDate(sunTimes.sunrise);
+            document.getElementById('sunSet').textContent = formatTimeFromDate(sunTimes.sunset);
+            document.getElementById('moonRise').textContent = formatTimeFromDate(moonTimes.rise);
+            document.getElementById('moonSet').textContent = formatTimeFromDate(moonTimes.set);
+        }
+
+        function formatTimeFromDate(date) {
+            if (!date) return '--:--';
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const now = Date.now();
+            const dt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            if (isRunning && speedMultiplier !== 0) {
+                const addedTime = dt * speedMultiplier * 60 * 1000;
+                simDate = new Date(simDate.getTime() + addedTime);
+                updateSimTimeDisplay();
+                updateCelestialBodies();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function updateSimTimeDisplay() {
+            const pad = (n) => String(n).padStart(2, '0');
+            const str = `${pad(simDate.getDate())}/${pad(simDate.getMonth() + 1)}/${simDate.getFullYear()} ${pad(simDate.getHours())}:${pad(simDate.getMinutes())}:${pad(simDate.getSeconds())}`;
+            document.getElementById('simTime').innerText = str;
+        }
+
+        function togglePanel(event) {
+            const panel = document.getElementById('controlPanel');
+            if (panel.classList.contains('minimized')) {
+                panel.classList.remove('minimized');
+                event.stopPropagation();
+            }
+        }
+
+        function closePanel() {
+            const panel = document.getElementById('controlPanel');
+            panel.classList.add('minimized');
+        }
+
+        window.createSimulation = function () {
+            if (!selectedCoords) {
+                alert("Vui lòng chọn vị trí!");
+                return;
+            }
+
+            const dateVal = document.getElementById('dateInput').value;
+            const timeVal = document.getElementById('timeInput').value;
+            simDate = new Date(`${dateVal}T${timeVal}`);
+
+            closePanel();
+            document.getElementById('timeControls').style.display = 'block';
+            document.getElementById('eclipseControls').style.display = 'flex';
+            document.getElementById('infoBadge').style.display = 'block';
+
+            document.getElementById('infoLat').innerText = selectedCoords.lat.toFixed(4);
+            document.getElementById('infoLon').innerText = selectedCoords.lon.toFixed(4);
+
+            const pad = (n) => String(n).padStart(2, '0');
+            document.getElementById('dateInput2').value = `${simDate.getFullYear()}-${pad(simDate.getMonth() + 1)}-${pad(simDate.getDate())}`;
+            document.getElementById('timeInput2').value = `${pad(simDate.getHours())}:${pad(simDate.getMinutes())}`;
+
+            updateSimTimeDisplay();
+            updateCelestialBodies();
+            if (showSunPaths) {
+                createSeasonalSunPaths();
+            }
+        };
+
+        function toggleSunPaths() {
+            showSunPaths = !showSunPaths;
+
+            const btn = document.getElementById('sunPathBtn');
+            btn.classList.toggle('active', showSunPaths);
+
+            if (showSunPaths) {
+                createSeasonalSunPaths();
+            } else {
+                // Xóa toàn bộ quỹ đạo khỏi scene
+                sunPathLines.forEach(obj => scene.remove(obj));
+                sunPathLines = [];
+            }
+        }
+
+        window.pauseSimulation = function () {
+            isRunning = !isRunning;
+        }
+
+        window.returnToPresent = function () {
+            simDate = new Date();
+            resetEclipseEffects();
+            if (originalStates) {
+                if (currentEclipse === 'solar') {
+                    sun.position.copy(originalStates.sun);
+                    moon.position.copy(originalStates.moon);
+                    sun.scale.copy(originalStates.sunScale);
+                    moon.scale.copy(originalStates.moonScale);
+                    sun.material.color.setHex(0xffff00);
+                } else if (currentEclipse === 'lunar') {
+                    moon.position.copy(originalStates.moon);
+                    moon.material.color.setHex(0xffffff);
+                    moon.material.emissive.setHex(0x222222);
+                    moon.material.emissiveIntensity = 0.1;
+                }
+                originalStates = null;
+                currentEclipse = null;
+            }
+
+            updateCelestialBodies();
+            updateSimTimeDisplay();
+        };
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            speedMultiplier = parseInt(e.target.value);
+            const display = document.getElementById('speedValue');
+            if (speedMultiplier === 0) {
+                display.innerText = "1 giây = 0 phút (Dừng)";
+                isRunning = false;
+            } else {
+                display.innerText = `1 giây = ${speedMultiplier} phút`;
+                isRunning = true;
+            }
+        });
+
+        document.getElementById('dateInput2').addEventListener('change', function () {
+            updateFromInputs();
+        });
+
+        document.getElementById('timeInput2').addEventListener('change', function () {
+            updateFromInputs();
+        });
+
+        function updateFromInputs() {
+            const dateVal = document.getElementById('dateInput2').value;
+            const timeVal = document.getElementById('timeInput2').value;
+            if (dateVal && timeVal) {
+                simDate = new Date(`${dateVal}T${timeVal}`);
+                updateSimTimeDisplay();
+                updateCelestialBodies();
+            }
+        }
+
+        function navigateTo(url) {
+            window.location.href = url;
+        }
+
+        function setupEclipseSimulation(type) {
+            originalStates = {
+                sun: sun.position.clone(),
+                moon: moon.position.clone(),
+                sunScale: sun.scale.clone(),
+                moonScale: moon.scale.clone()
+            };
+
+            const dist = 180;
+            const targetAz = Math.PI; 
+            const targetAlt = Math.PI / 4; 
+
+            if (type === 'solar') {
+                currentEclipse = 'solar';
+                sun.position.set(-Math.sin(targetAz) * dist, Math.sin(targetAlt) * dist, Math.cos(targetAz) * dist);
+                moon.position.set(-Math.sin(targetAz) * 175, Math.sin(targetAlt) * 175, Math.cos(targetAz) * 175);
+            } else {
+                currentEclipse = 'lunar';
+                sun.position.set(-Math.sin(targetAz) * dist, Math.sin(targetAlt) * dist, Math.cos(targetAz) * dist);
+                const oppAz = targetAz + Math.PI;
+                moon.position.set(-Math.sin(oppAz) * dist, Math.sin(-targetAlt) * dist, Math.cos(oppAz) * dist);
+            }
+
+            applyEclipseVisuals(type);
+        }
+
+        function applyEclipseVisuals(type) {
+            const sunLight = sun.children.find(child => child instanceof THREE.PointLight);
+
+            if (type === 'solar') {
+                if (sunLight) sunLight.intensity = 0.1;
+                skyDome.material.uniforms.topColor.value.setHex(0x050510);
+                skyDome.material.uniforms.bottomColor.value.setHex(0x101020);
+
+                sun.material.color.setHex(0xffffff);
+                document.getElementById('debugAngle').innerText = "100% (Toàn phần)";
+            }
+            else if (type === 'lunar') {
+                moon.material.uniforms.sunDirection.value.set(0, -1, 0);
+
+                moon.material.fragmentShader = moon.material.fragmentShader.replace(
+                    'vec3 bright = vec3(0.95, 0.95, 0.9);',
+                    'vec3 bright = vec3(0.6, 0.1, 0.05);' 
+                );
+                moon.material.needsUpdate = true;
+            }
+        }
+
+        function resetEclipseEffects() {
+            currentEclipse = null;
+
+            const sunLight = sun.children.find(child => child instanceof THREE.PointLight);
+            if (sunLight) sunLight.intensity = 1.5;
+
+            sun.material.color.setHex(0xffff00);
+
+            if (moon.material.fragmentShader.includes('vec3(0.6, 0.1, 0.05)')) {
+                location.reload(); 
+            }
+
+            updateCelestialBodies();
+        }
+        const MAX_SCAN_DAYS = 730;
+
+        async function findNextEclipse(type) {
+            let checkDate = new Date(simDate); 
+            let found = false;
+
+            const statusMsg = type === 'solar' ? "Đang tìm Nhật thực gần nhất..." : "Đang tìm Nguyệt thực gần nhất...";
+            document.getElementById('selectedLocation').innerText = statusMsg;
+
+            for (let i = 0; i < MAX_SCAN_DAYS; i++) {
+                checkDate.setDate(checkDate.getDate() + 1);
+
+                const illumination = SunCalc.getMoonIllumination(checkDate);
+
+                if (type === 'solar') {
+                    if (illumination.phase < 0.02 || illumination.phase > 0.98) {
+                        if (checkSpecificEclipse(checkDate, 'solar')) {
+                            found = true; break;
+                        }
+                    }
+                } else {
+                    if (illumination.phase > 0.48 && illumination.phase < 0.52) {
+                        if (checkSpecificEclipse(checkDate, 'lunar')) {
+                            found = true; break;
+                        }
+                    }
+                }
+            }
+
+            if (found) {
+                simDate = new Date(checkDate);
+                updateSimTimeDisplay();
+                updateCelestialBodies();
+                announceEclipse(type);
+            } else {
+                alert("Không tìm thấy sự kiện nào trong 2 năm tới tại vùng này.");
+            }
+        }
+
+        function checkSpecificEclipse(date, type) {
+            for (let h = 0; h < 24; h++) {
+                for (let m = 0; m < 60; m += 15) {
+                    let testTime = new Date(date);
+                    testTime.setHours(h, m, 0);
+
+                    const sunP = SunCalc.getPosition(testTime, selectedCoords.lat, selectedCoords.lon);
+                    const moonP = SunCalc.getMoonPosition(testTime, selectedCoords.lat, selectedCoords.lon);
+
+                    const distance = Math.sqrt(Math.pow(sunP.azimuth - moonP.azimuth, 2) + Math.pow(sunP.altitude - moonP.altitude, 2));
+
+                    if (distance < 0.015) {
+                        date.setHours(h, m, 0);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function announceEclipse(type) {
+            const sunP = SunCalc.getPosition(simDate, selectedCoords.lat, selectedCoords.lon);
+            const moonP = SunCalc.getMoonPosition(simDate, selectedCoords.lat, selectedCoords.lon);
+            const dist = Math.sqrt(Math.pow(sunP.azimuth - moonP.azimuth, 2) + Math.pow(sunP.altitude - moonP.altitude, 2));
+
+            let detail = "";
+            if (type === 'solar') {
+                if (dist < 0.005) detail = "NHẬT THỰC TOÀN PHẦN";
+                else detail = "NHẬT THỰC MỘT PHẦN";
+            } else {
+                if (dist < 0.005) detail = "NGUYỆT THỰC TOÀN PHẦN (Trăng Máu)";
+                else detail = "NGUYỆT THỰC MỘT PHẦN";
+            }
+
+            const msg = `Đã tìm thấy: ${detail}\nNgày: ${simDate.toLocaleDateString('vi-VN')}\nGiờ: ${simDate.toLocaleTimeString('vi-VN')}`;
+            document.getElementById('selectedLocation').innerText = msg;
+
+            currentEclipse = type;
+            applyEclipseVisuals(type);
+            updateSkyColor();
+        }
+
+        function initLocationPicker() {
+            locationMap = L.map('locationPicker').setView([21.0285, 105.8542], 8);
+            L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                attribution: '© Google Maps'
+            }).addTo(locationMap);
+
+            locationMap.on('click', (e) => {
+                const { lat, lng } = e.latlng;
+                if (locationMarker) locationMap.removeLayer(locationMarker);
+                locationMarker = L.marker([lat, lng]).addTo(locationMap);
+                selectedCoords = { lat: lat, lon: lng };
+                document.getElementById('selectedLocation').innerText = `Lat: ${lat.toFixed(4)}, Lon: ${lng.toFixed(4)}`;
+            });
+
+            selectedCoords = { lat: 21.0285, lon: 105.8542 };
+            locationMarker = L.marker([21.0285, 105.8542]).addTo(locationMap);
+        }
+
+        window.onload = init;
+
+        function toggleHomeMenu() {
+            const menu = document.getElementById('homeMenu');
+            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function closeHomeMenu() {
+            document.getElementById('homeMenu').style.display = 'none';
+        }
+
+        document.getElementById('homeBtn').addEventListener('click', toggleHomeMenu);
+
+        document.getElementById('homeMenu').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeHomeMenu();
+            }
+        });
+
+        let currentPages = {
+            guidePage: 1,
+            eduPage: 1,
+        };
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                openModal('guideModal');
+            }, 500);
+        });
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function changePage(prefix, direction) {
+            let totalPages;
+            if (prefix === 'guidePage') totalPages = 3;
+            else if (prefix === 'eduPage') totalPages = 4;
+
+            let currentPage = currentPages[prefix];
+
+            document.getElementById(`${prefix}${currentPage}`).classList.remove('active');
+
+            currentPage += direction;
+            if (currentPage > totalPages) currentPage = 1;
+            if (currentPage < 1) currentPage = totalPages;
+
+            currentPages[prefix] = currentPage;
+            document.getElementById(`${prefix}${currentPage}`).classList.add('active');
+
+            const numId = prefix === 'guidePage' ? 'guideNum' : (prefix === 'eduPage' ? 'eduNum' : 'quizNum');
+            document.getElementById(numId).textContent = currentPage;
+
+            if (prefix === 'quizPage') {
+                resetQuiz(currentPage);
+            }
+        }
+
+        window.onclick = function (event) {
+            if (event.target.className === 'modal-overlay') {
+                event.target.style.display = 'none';
+            }
+        }
+
+        const quizData = {
+            solar_system: [
+                {
+                    q: "Hành tinh nào gần Mặt Trời nhất?",
+                    opts: ["Trái Đất", "Sao Thủy", "Sao Kim", "Sao Hỏa"],
+                    ans: 1,
+                    explanation: "Sao Thủy là hành tinh gần Mặt Trời nhất với khoảng cách trung bình chỉ khoảng 0.387 AU (khoảng 58 triệu km)."
+                },
+                {
+                    q: "Hành tinh nào được gọi là “Hành tinh Đỏ”?",
+                    opts: ["Sao Kim", "Sao Hỏa", "Sao Mộc", "Sao Thổ"],
+                    ans: 1,
+                    explanation: "Sao Hỏa có màu đỏ đặc trưng do bụi oxit sắt (gỉ sét) trên bề mặt, tạo nên màu sắc đỏ cam rõ rệt."
+                },
+                {
+                    q: "Hành tinh nào lớn nhất trong Hệ Mặt Trời?",
+                    opts: ["Sao Thổ", "Sao Mộc", "Sao Thiên Vương", "Sao Hải Vương"],
+                    ans: 1,
+                    explanation: "Sao Mộc là hành tinh lớn nhất, có đường kính khoảng 142.984 km và chiếm hơn 70% tổng khối lượng của tất cả các hành tinh."
+                },
+                {
+                    q: "Hành tinh nào có hệ thống vành đai nổi bật nhất?",
+                    opts: ["Sao Mộc", "Sao Thổ", "Sao Thiên Vương", "Sao Hải Vương"],
+                    ans: 1,
+                    explanation: "Sao Thổ nổi tiếng với hệ thống vành đai rộng lớn, rõ nét và phức tạp nhất trong Hệ Mặt Trời, chủ yếu làm từ băng và đá."
+                },
+                {
+                    q: "Hành tinh nào có một ngày dài hơn một năm?",
+                    opts: ["Sao Hỏa", "Sao Kim", "Sao Thủy", "Sao Hải Vương"],
+                    ans: 1,
+                    explanation: "Sao Kim quay rất chậm và ngược chiều, nên một ngày trên Sao Kim (243 ngày Trái Đất) dài hơn một năm quay quanh Mặt Trời (225 ngày Trái Đất)."
+                },
+                {
+                    q: "Vệ tinh tự nhiên lớn nhất trong Hệ Mặt Trời là gì?",
+                    opts: ["Titan", "Ganymede", "Europa", "Callisto"],
+                    ans: 1,
+                    explanation: "Ganymede (vệ tinh của Sao Mộc) là vệ tinh lớn nhất, đường kính khoảng 5.268 km, thậm chí lớn hơn cả Sao Thủy."
+                },
+                {
+                    q: "Hành tinh nào có nhiều vệ tinh tự nhiên nhất?",
+                    opts: ["Sao Thổ", "Sao Mộc", "Sao Thiên Vương", "Sao Hải Vương"],
+                    ans: 0,  
+                    explanation: "Tính đến nay, Sao Thổ có số lượng vệ tinh được xác nhận nhiều nhất (hơn 145), vượt qua Sao Mộc."
+                },
+                {
+                    q: "Hành tinh nào quay quanh Mặt Trời nhanh nhất?",
+                    opts: ["Sao Kim", "Sao Thủy", "Trái Đất", "Sao Hỏa"],
+                    ans: 1,
+                    explanation: "Sao Thủy có chu kỳ quay quanh Mặt Trời ngắn nhất, chỉ khoảng 88 ngày Trái Đất."
+                },
+                {
+                    q: "Hành tinh nào có trục nghiêng gần như nằm ngang?",
+                    opts: ["Sao Hải Vương", "Sao Thiên Vương", "Sao Thổ", "Sao Mộc"],
+                    ans: 1,
+                    explanation: "Sao Thiên Vương có trục nghiêng khoảng 98°, gần như nằm ngang, khiến hành tinh như 'lăn' khi quay quanh Mặt Trời."
+                },
+                {
+                    q: "Hành tinh nào có gió mạnh nhất trong Hệ Mặt Trời?",
+                    opts: ["Sao Mộc", "Sao Thổ", "Sao Hải Vương", "Sao Thiên Vương"],
+                    ans: 2,
+                    explanation: "Sao Hải Vương có tốc độ gió mạnh nhất, lên đến hơn 2.100 km/h, nhanh nhất trong Hệ Mặt Trời."
+                },
+                {
+                    q: "Hành tinh nào có nhiệt độ bề mặt cao nhất?",
+                    opts: ["Sao Thủy", "Sao Kim", "Sao Hỏa", "Sao Mộc"],
+                    ans: 1,
+                    explanation: "Sao Kim có nhiệt độ bề mặt trung bình khoảng 464°C do hiệu ứng nhà kính cực mạnh từ khí quyển dày đặc CO₂."
+                },
+                {
+                    q: "Vành đai tiểu hành tinh nằm giữa hai hành tinh nào?",
+                    opts: ["Sao Kim và Trái Đất", "Sao Hỏa và Sao Mộc", "Sao Mộc và Sao Thổ", "Trái Đất và Sao Hỏa"],
+                    ans: 1,
+                    explanation: "Vành đai tiểu hành tinh chính nằm giữa quỹ đạo Sao Hỏa và Sao Mộc."
+                },
+                {
+                    q: "Hành tinh nào có vệ tinh Titan?",
+                    opts: ["Sao Mộc", "Sao Thổ", "Sao Thiên Vương", "Sao Hải Vương"],
+                    ans: 1,
+                    explanation: "Titan là vệ tinh lớn nhất của Sao Thổ, có khí quyển dày và hồ methane lỏng."
+                },
+                {
+                    q: "Hành tinh nào có từ trường mạnh nhất?",
+                    opts: ["Sao Thổ", "Sao Mộc", "Sao Thiên Vương", "Sao Hải Vương"],
+                    ans: 1,
+                    explanation: "Sao Mộc có từ trường mạnh nhất, mạnh gấp khoảng 20.000 lần từ trường Trái Đất."
+                },
+                {
+                    q: "Hành tinh nào có bầu khí quyển chủ yếu là carbon dioxide?",
+                    opts: ["Sao Thủy", "Sao Hỏa", "Sao Mộc", "Sao Thiên Vương"],
+                    ans: 1,
+                    explanation: "Sao Hỏa có khí quyển mỏng chủ yếu là CO₂ (khoảng 95%)."
+                },
+                {
+                    q: "Hành tinh nào được phát hiện nhờ tính toán trước khi quan sát trực tiếp?",
+                    opts: ["Sao Thiên Vương", "Sao Hải Vương", "Sao Mộc", "Sao Thổ"],
+                    ans: 1,
+                    explanation: "Sao Hải Vương được Urbain Le Verrier dự đoán vị trí bằng toán học năm 1846 trước khi Johann Galle quan sát."
+                },
+                {
+                    q: "Hành tinh nào có vệ tinh Europa?",
+                    opts: ["Sao Thổ", "Sao Mộc", "Sao Thiên Vương", "Sao Hải Vương"],
+                    ans: 1,
+                    explanation: "Europa là vệ tinh của Sao Mộc, được cho là có đại dương ngầm dưới lớp băng."
+                },
+                {
+                    q: "Hành tinh nào có vệ tinh Enceladus phun nước?",
+                    opts: ["Sao Mộc", "Sao Thổ", "Sao Thiên Vương", "Sao Hải Vương"],
+                    ans: 1,
+                    explanation: "Enceladus (vệ tinh Sao Thổ) có các mạch nước nóng phun nước và hơi nước từ đại dương ngầm."
+                },
+                {
+                    q: "Hành tinh nào có vệ tinh Triton?",
+                    opts: ["Sao Mộc", "Sao Thổ", "Sao Thiên Vương", "Sao Hải Vương"],
+                    ans: 3,
+                    explanation: "Triton là vệ tinh lớn nhất của Sao Hải Vương, quay ngược chiều và có hoạt động địa chất."
+                },
+                {
+                    q: "Hành tinh nào có vệ tinh Miranda?",
+                    opts: ["Sao Mộc", "Sao Thổ", "Sao Thiên Vương", "Sao Hải Vương"],
+                    ans: 2,
+                    explanation: "Miranda là vệ tinh nhỏ nhưng có địa hình cực kỳ gồ ghề và đa dạng của Sao Thiên Vương."
+                }
+            ],
+
+            sun_moon_motion: [
+                {
+                    q: "Mặt Trời mọc ở hướng nào trên Trái Đất?",
+                    opts: ["Tây", "Đông", "Nam", "Bắc"],
+                    ans: 1,
+                    explanation: "Do Trái Đất quay từ Tây sang Đông, Mặt Trời xuất hiện từ hướng Đông mỗi buổi sáng."
+                },
+                {
+                    q: "Mặt Trời lặn ở hướng nào?",
+                    opts: ["Tây", "Đông", "Nam", "Bắc"],
+                    ans: 0,
+                    explanation: "Mặt Trời lặn ở hướng Tây do chuyển động biểu kiến từ Đông sang Tây trên bầu trời."
+                },
+                {
+                    q: "Thời gian Trái Đất quay một vòng quanh Mặt Trời là bao lâu?",
+                    opts: ["1 ngày", "7 ngày", "30 ngày", "365 ngày"],
+                    ans: 3,
+                    explanation: "Trái Đất mất khoảng 365,25 ngày để quay một vòng quanh Mặt Trời (1 năm)."
+                },
+                {
+                    q: "Thời gian Trái Đất quay một vòng quanh trục của nó là bao lâu?",
+                    opts: ["24 giờ", "12 giờ", "48 giờ", "365 ngày"],
+                    ans: 0,
+                    explanation: "Một vòng quay quanh trục mất khoảng 23 giờ 56 phút (ngày sao), gần 24 giờ (ngày Mặt Trời)."
+                },
+                {
+                    q: "Mặt Trăng quay quanh Trái Đất mất bao lâu?",
+                    opts: ["7 ngày", "15 ngày", "27,3 ngày", "365 ngày"],
+                    ans: 2,
+                    explanation: "Chu kỳ quay quanh Trái Đất của Mặt Trăng (tháng sao) là khoảng 27,3 ngày."
+                },
+                {
+                    q: "Hiện tượng nhật thực xảy ra khi:",
+                    opts: ["Mặt Trăng nằm giữa Trái Đất và Mặt Trời", "Trái Đất nằm giữa Mặt Trời và Mặt Trăng", "Mặt Trời nằm giữa Trái Đất và Mặt Trăng", "Sao Kim che khuất Mặt Trời"],
+                    ans: 0,
+                    explanation: "Nhật thực xảy ra khi Mặt Trăng che khuất Mặt Trời khi nhìn từ Trái Đất."
+                },
+                {
+                    q: "Hiện tượng nguyệt thực xảy ra khi:",
+                    opts: ["Trái Đất nằm giữa Mặt Trời và Mặt Trăng", "Mặt Trăng nằm giữa Trái Đất và Mặt Trời", "Mặt Trời nằm giữa Trái Đất và Mặt Trăng", "Sao Mộc che khuất Mặt Trăng"],
+                    ans: 0,
+                    explanation: "Nguyệt thực xảy ra khi Trái Đất nằm giữa Mặt Trời và Mặt Trăng, bóng Trái Đất che Mặt Trăng."
+                },
+                {
+                    q: "Mặt Trăng có bao nhiêu pha chính?",
+                    opts: ["2", "4", "8", "12"],
+                    ans: 2,
+                    explanation: "Có 4 pha chính: Trăng non, Trăng khuyết (lưỡi liềm), Trăng rằm (trăng tròn), Trăng khuyết (bán nguyệt)."
+                },
+                {
+                    q: "Pha nào của Mặt Trăng xảy ra khi Mặt Trăng nằm giữa Trái Đất và Mặt Trời?",
+                    opts: ["Trăng tròn", "Trăng non", "Trăng khuyết", "Trăng bán nguyệt"],
+                    ans: 1,
+                    explanation: "Trăng non xảy ra khi Mặt Trăng nằm giữa Trái Đất và Mặt Trời, mặt sáng hướng về Mặt Trời."
+                },
+                {
+                    q: "Pha nào của Mặt Trăng xảy ra khi Trái Đất nằm giữa Mặt Trời và Mặt Trăng?",
+                    opts: ["Trăng non", "Trăng tròn", "Trăng khuyết", "Trăng lưỡi liềm"],
+                    ans: 1,
+                    explanation: "Trăng tròn xảy ra khi Mặt Trăng ở phía đối diện Mặt Trời so với Trái Đất."
+                },
+                {
+                    q: "Mặt Trăng mọc ở hướng nào?",
+                    opts: ["Đông", "Tây", "Nam", "Bắc"],
+                    ans: 0,
+                    explanation: "Mặt Trăng mọc ở hướng Đông, tương tự Mặt Trời, do chuyển động quay của Trái Đất."
+                },
+                {
+                    q: "Mặt Trăng lặn ở hướng nào?",
+                    opts: ["Tây", "Đông", "Nam", "Bắc"],
+                    ans: 0,
+                    explanation: "Mặt Trăng lặn ở hướng Tây, giống chuyển động biểu kiến từ Đông sang Tây."
+                },
+                {
+                    q: "Nguyên nhân chính tạo ra ngày và đêm trên Trái Đất là gì?",
+                    opts: ["Trái Đất quay quanh Mặt Trời", "Trái Đất tự quay quanh trục của nó", "Mặt Trăng quay quanh Trái Đất", "Mặt Trời quay quanh Trái Đất"],
+                    ans: 1,
+                    explanation: "Ngày và đêm xảy ra do Trái Đất tự quay quanh trục, khiến một nửa luôn hướng về Mặt Trời."
+                },
+                {
+                    q: "Nguyên nhân chính tạo ra các mùa trong năm là gì?",
+                    opts: ["Mặt Trăng quay quanh Trái Đất", "Trái Đất nghiêng trục khi quay quanh Mặt Trời", "Mặt Trời quay quanh Trái Đất", "Sự thay đổi khoảng cách Trái Đất – Mặt Trời"],
+                    ans: 1,
+                    explanation: "Trục Trái Đất nghiêng 23,5° so với mặt phẳng quỹ đạo, gây ra sự thay đổi góc chiếu sáng → tạo ra 4 mùa."
+                },
+                {
+                    q: "Mặt Trăng luôn hướng cùng một mặt về phía Trái Đất vì:",
+                    opts: ["Mặt Trăng không quay quanh trục", "Chu kỳ quay quanh trục bằng chu kỳ quay quanh Trái Đất", "Trái Đất quay nhanh hơn", "Mặt Trời chiếu sáng một phía"],
+                    ans: 1,
+                    explanation: "Đây là hiện tượng khóa thủy triều (tidal locking): chu kỳ tự quay bằng chu kỳ quay quanh Trái Đất."
+                },
+                {
+                    q: "Nhật thực toàn phần xảy ra khi:",
+                    opts: ["Mặt Trăng che khuất hoàn toàn Mặt Trời", "Mặt Trăng che khuất một phần Mặt Trời", "Trái Đất che khuất Mặt Trăng", "Mặt Trời che khuất Trái Đất"],
+                    ans: 0,
+                    explanation: "Nhật thực toàn phần xảy ra khi Mặt Trăng che khuất hoàn toàn đĩa Mặt Trời, tạo vùng bóng tối trên Trái Đất."
+                },
+                {
+                    q: "Nguyệt thực toàn phần xảy ra khi:",
+                    opts: ["Mặt Trăng che khuất Mặt Trời", "Mặt Trăng đi vào vùng bóng tối của Trái Đất", "Trái Đất che khuất một phần Mặt Trăng", "Mặt Trời che khuất Trái Đất"],
+                    ans: 1,
+                    explanation: "Mặt Trăng đi hoàn toàn vào vùng bóng tối (umbra) của Trái Đất, thường có màu đỏ do ánh sáng khúc xạ qua khí quyển."
+                },
+                {
+                    q: "Mặt Trời di chuyển biểu kiến trên bầu trời theo hướng nào?",
+                    opts: ["Từ Đông sang Tây", "Từ Tây sang Đông", "Từ Bắc sang Nam", "Từ Nam sang Bắc"],
+                    ans: 0,
+                    explanation: "Do Trái Đất quay từ Tây sang Đông, Mặt Trời dường như di chuyển từ Đông sang Tây trên bầu trời."
+                },
+                {
+                    q: "Mặt Trăng di chuyển biểu kiến trên bầu trời theo hướng nào?",
+                    opts: ["Từ Đông sang Tây", "Từ Tây sang Đông", "Từ Bắc sang Nam", "Từ Nam sang Bắc"],
+                    ans: 0,
+                    explanation: "Tương tự Mặt Trời, Mặt Trăng cũng di chuyển biểu kiến từ Đông sang Tây do chuyển động quay của Trái Đất."
+                },
+                {
+                    q: "Khi Mặt Trời ở vị trí cao nhất trên bầu trời, ta gọi là gì?",
+                    opts: ["Bình minh", "Hoàng hôn", "Giữa trưa (thiên đỉnh)", "Nửa đêm"],
+                    ans: 2,
+                    explanation: "Đó là thời điểm Mặt Trời đạt thiên đỉnh (zenith), gọi là giữa trưa mặt trời (solar noon)."
+                }
+            ]
+        };
+
+        let currentTopic = null;
+        let shuffledQuestions = [];
+        let currentQuizPage = 0;
+        let selectedAnswer = -1; 
+
+        function startQuiz(topic) {
+            currentTopic = topic;
+            const questions = quizData[topic];
+            shuffledQuestions = [...questions].sort(() => Math.random() - 0.5);
+            currentQuizPage = 0;
+            selectedAnswer = -1;
+
+            closeModal('topicModal');
+            openModal('quizModalNew');
+
+            document.getElementById('quizTopicTitle').textContent =
+                topic === 'solar_system' ? 'Hệ Mặt Trời' : 'Chuyển động Mặt Trời và Mặt Trăng';
+
+            renderQuizPage();
+        }
+
+        function renderQuizPage() {
+            const container = document.getElementById('quizContainer');
+            container.innerHTML = '';
+
+            const q = shuffledQuestions[currentQuizPage];
+            if (!q) return;
+
+            let html = `<div class="quiz-question">${currentQuizPage + 1}. ${q.q}</div>`;
+            html += '<div class="quiz-options">';
+
+            q.opts.forEach((opt, idx) => {
+                html += `
+        <div class="quiz-option ${selectedAnswer === idx ? 'selected' : ''}" 
+             onclick="selectQuizAnswer(${idx})">
+            ${String.fromCharCode(65 + idx)}. ${opt}
+        </div>
+    `;
+            });
+            html += '</div>';
+            html += `
+    <button class="quiz-btn check-btn" id="checkAnswerBtn" onclick="checkCurrentAnswer()" disabled>Kiểm tra</button>
+`;
+            html += `
+    <div id="resultArea" class="quiz-result-global"></div>
+    <div id="explanationArea" class="explanation"></div>
+`;
+
+            container.innerHTML = html;
+
+            document.getElementById('quizPageNum').textContent = currentQuizPage + 1;
+
+            const checkBtn = document.getElementById('checkAnswerBtn');
+            if (checkBtn) {
+                checkBtn.disabled = selectedAnswer === -1;
+            }
+        }
+
+        function selectQuizAnswer(idx) {
+            selectedAnswer = idx;
+
+            const options = document.querySelectorAll('#quizContainer .quiz-option');
+            options.forEach((el, i) => {
+                el.classList.toggle('selected', i === idx);
+            });
+
+            document.getElementById('checkAnswerBtn').disabled = false;
+        }
+
+        function checkCurrentAnswer() {
+            if (selectedAnswer === -1) return;
+
+            const q = shuffledQuestions[currentQuizPage];
+            const correctIdx = q.ans;
+            const resultArea = document.getElementById('resultArea');
+            const expArea = document.getElementById('explanationArea');
+
+            const isCorrect = selectedAnswer === correctIdx;
+
+            resultArea.className = `quiz-result-global show ${isCorrect ? 'correct' : 'wrong'}`;
+            resultArea.textContent = isCorrect ? '✓ Chính xác!' : '✗ Sai rồi!';
+
+            expArea.className = 'explanation show';
+            expArea.textContent = q.explanation;
+
+            const options = document.querySelectorAll('#quizContainer .quiz-option');
+            options.forEach((el, i) => {
+                el.classList.remove('correct', 'wrong');
+                if (i === correctIdx) el.classList.add('correct');
+                if (i === selectedAnswer && !isCorrect) el.classList.add('wrong');
+            });
+
+            document.getElementById('checkAnswerBtn').disabled = true;
+        }
+
+        function changeQuizPage(dir) {
+            currentQuizPage += dir;
+            currentQuizPage = Math.max(0, Math.min(shuffledQuestions.length - 1, currentQuizPage));
+            selectedAnswer = -1; 
+            renderQuizPage();
+        }
+    </script>
+</body>
+</html>
